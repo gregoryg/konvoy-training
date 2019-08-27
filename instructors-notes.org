@@ -1,0 +1,35 @@
+* Workshop setup - for instructors only!                     :noexport:cloud:
+** Minimum participant requirements:
+   + Laptop that can connect to site Wifi
+   + Able to bring up a terminal/shell
+   + Ability to edit a file using =vim=, =nano=, =notepad++=, =sublime=, =emacs=
+     or whatever
+   + Ability to install software (at least =pip3=, =aws=, =docker=, =kubectl=
+** Software requirements
+   + python/pip3
+   + kubectl
+   + docker!!
+   + aws cli
+   + text file editor
+
+   Google Cloud Shell is not just a good idea for Windows users, it's a good
+   chouce for almost everyone.  *But* each participant would require a GCP
+   account.  Free, but could take time and be unfamiliar.
+
+** Prepare a method to get AWS credentials to the participants
+   Students will need an AWS CLI credentials file, updated every hour.  Because
+   there will be access and authentication issues with any form of file sharing,
+   I recommend getting each participant's email and emailing them every hour.
+   File sharing services are also an option, such as Google Drive or Dropbox.
+
+   To start a new AWS session, use =maws= and the command below to display
+   exactly what the participants will need to save to their own
+   =~/.aws/credentials= file
+   #+begin_src sh :shebang "#!/bin/bash" :results none :tangle bin/refresh-aws.sh 
+     eval $(maws login 110465657741_Mesosphere-PowerUser)
+     cat ~/.aws/credentials | \
+         tr '\n' '\0' | \
+         grep -Eao '\0?\[110465657741_Mesosphere-PowerUser\][^\[]*'| \
+         sed 's,110465657741_Mesosphere-PowerUser,Temp,' | \
+         tr '\0' '\n'
+   #+end_src
