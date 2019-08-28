@@ -6,7 +6,8 @@
 #+title: Konvoy Training Workshop
 #+date: <2019-08-22 Thu>
 #+author: Denis Jannot, Greg Grubbs
-#+instructorsz: Greg Grubbs, Valerian Jone
+#+instructors: Greg Grubbs, Valerian Jone
+#+slide_header: github.com/mesosphere/konvoy-training
 #+email: ggrubbs@d2iq.com
 #+language: en
 #+select_tags: export
@@ -40,6 +41,10 @@ You need either a Linux, MacOS or a Windows laptop.
 *** Docker
 If you use your laptop, you need to have Docker installed.
 
+Test that unprivileged user can use =docker= commands
+#+begin_src sh
+docker ps
+#+end_src
 *** AWS Command Line Interface Installation and Setup
 You will need to install the AWS CLI.
 Either use the Python =pip3= command below or refer to [[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html][Installing the AWS CLI]]
@@ -58,6 +63,10 @@ Either use the Python =pip3= command below or refer to [[https://docs.aws.amazon
 
 Add the following information provided by the instructor to the
 =~/.aws/credentials= file (or create the file if necessary):
+#+begin_src 
+mkdir -p ~/.aws
+
+#+end_src
 
 This token will be valid for one hour.
 
@@ -83,22 +92,81 @@ The output should be something similar to
 
 *IMPORTANT*: If you don't finish the deployment on time, the instructor will provide
 an updated token.
+*** SSH Agent must be working
+    #+begin_src sh
+    ssh-add -l
+    #+end_src
+
+    Expected output:
+    #+begin_example
+    The agent has no identities.
+    #+end_example
+
+    If instead, you see
+    #+begin_example
+    Could not open a connection to your authentication agent.
+    #+end_example
+
+    You will need to start the agent.  Easiest way in one single shell session
+    is:
+    #+begin_src sh
+    ssh-agent bash
+    ssh-add -l
+    #+end_src
+
+    *NOTE* Participant may have to manually create their first SSH key
+    #+begin_src sh
+    ssh-keygen
+    #+end_src
+*** =kubectl= 
+    install from TODO:link
 
 ** Install Konvoy
 Clone the Github repository and run the following commands to uncompress
 the Konvoy binaries:
 
 #+BEGIN_SRC sh
-  bzip2 -d konvoy_*.tar.bz2
-  tar xvf konvoy_*.tar
+  tar xvf konvoy_*.tar.bz2
 #+END_SRC
 
-Go to the =konvoy= directory:
+Go to the =konvoy= directory and invoke the =konvoy= command:
 
 #+BEGIN_SRC sh
   cd konvoy_*/
+  ./konvoy
 #+END_SRC
 
+The first time you run the =konvoy= command, a docker image will be downloaded
+to your machine.  That only happens once per version of Konvoy.  
+
+Your expected output will be something like this:
+#+begin_example
+Status: Downloaded newer image for mesosphere/konvoy:v1.1.2
+docker.io/mesosphere/konvoy:v1.1.2
+Usage:
+  konvoy [command]
+
+Available Commands:
+  apply       Updates certain configuration in the existing kubeconfig file
+  check       Run checks on the health of the cluster
+  completion  Output shell completion code for the specified shell (bash or zsh)
+  deploy      Deploy a fully functioning Kubernetes cluster and addons
+  diagnose    Creates a diagnostics bundle of the cluster
+  down        Destroy the Kubernetes cluster
+  get         Get cluster related information
+  help        Help about any command
+  init        Create the provision and deploy configuration with default values
+  provision   Provision the nodes according to the provided Terraform variables file
+  reset       Remove any modifications to the nodes made by the installer, and cleanup file artifacts
+  up          Run provision, and deploy (kubernetes, container-networking, and addons) to create or update a Kubernetes cluster reflecting the provided configuration and inventory files
+  version     Version for konvoy
+
+Flags:
+  -h, --help      help for konvoy
+      --version   version for konvoy
+
+Use "konvoy [command] --help" for more information about a command.
+#+end_example
 * 1. Deploy a Konvoy cluster
   :PROPERTIES:
   :CUSTOM_ID: deploy-a-konvoy-cluster
@@ -125,12 +193,17 @@ single logical cluster, or even across multiple clusters. Thus, picking a
 deployment model that suits the scale that you need as your business grows is
 important.
 
-** Steps
+** Lab Steps
 Execute the following command to create a =cluster.yaml= template file:
 
 #+BEGIN_SRC sh
   ./konvoy init
 #+END_SRC
+
+Expected output:
+#+begin_example
+Created configuration file successfully!
+#+end_example
 
 Edit the newly created =cluster.yaml= file to add the =owner= and =expiration=
 tags and update the number of workers as shown below:
@@ -143,7 +216,8 @@ tags and update the number of workers as shown below:
       availabilityZones:
       - us-west-2c
       tags:
-        owner: djannot
+        owner: <YOUREMAIL>
+        purpose: konvoy-training
         expiration: 12h
         nodePools:
         - name: worker
@@ -256,11 +330,13 @@ following command:
   ./konvoy apply kubeconfig
 #+END_EXAMPLE
 
-You can check that the Kubernetes cluster has been deployed using the
-version =1.14.4= with 3 control nodes and 3 workers nodes
+You can check that the Kubernetes cluster has been deployed with 3 control nodes
+and 3 worker nodes
 
 #+BEGIN_SRC sh
   kubectl get nodes
+#+END_SRC
+#+begin_example
   NAME                                         STATUS   ROLES    AGE   VERSION
   ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
   ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.1
@@ -270,7 +346,8 @@ version =1.14.4= with 3 control nodes and 3 workers nodes
   ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.1
   ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.1
   ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.1
-#+END_SRC
+#+end_example
+
 
 * 2. Expose a Kubernetes Application using a Service Type Load Balancer
 (L4)
@@ -288,7 +365,7 @@ version =1.14.4= with 3 control nodes and 3 workers nodes
 - Deploy a couple hello-world applications and expose them using an
   Ingress service (L7) and validate that the connection is exposed to
   the outside
-
+  [[https://www.webopedia.com/quick_ref/OSI_Layers.asp][The 7 Layers of the OSI Model]]
 ** Why is this Important?
    :PROPERTIES:
    :CUSTOM_ID: why-is-this-important-1
@@ -299,6 +376,7 @@ environment can be challenging to set up. With Konvoy, the integration
 with AWS cloud load balancer is already done by default and Traefik is
 deployed to allow you to easily create ingresses.
 
+** Lab Steps
 Deploy a redis Pod on your Kubernetes cluster by running the following
 command:
 
@@ -348,10 +426,11 @@ created on AWS for this service:
 
 #+BEGIN_SRC sh
   kubectl get svc redis
-
+#+END_SRC
+#+begin_example
   NAME    TYPE           CLUSTER-IP   EXTERNAL-IP                                                               PORT(S)          AGE
   redis   LoadBalancer   10.0.51.32   a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com   6379:31423/TCP   43s
-#+END_SRC
+#+end_example
 
 You need to wait for a few minutes while the Load Balancer is created on
 AWS and the name resolution in place.
@@ -368,17 +447,25 @@ using telnet:
 
 #+BEGIN_SRC sh
   telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
-
+#+END_SRC
+#+begin_example
   Trying 52.27.218.48...
   Connected to a92b6c9216ccc11e982140acb7ee21b7-1453813785.us-west-2.elb.amazonaws.com.
   Escape character is '^]'.
   quit
   +OK
   Connection closed by foreign host.
-#+END_SRC
+#+end_example
+
+To exit =telnet=, type =Control-]=, then =quit=
 
 If you don't have =telnet= installed in your machine, you can use =nc=
 instead.
+
+#+begin_src sh
+  sudo apt install netcat
+  nc -z $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
+#+end_src
 
 * 3. Expose a Kubernetes Application using an Ingress (L7)
   :PROPERTIES:

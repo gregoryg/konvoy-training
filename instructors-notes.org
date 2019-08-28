@@ -1,4 +1,7 @@
-* Workshop setup - for instructors only!                     :noexport:cloud:
+* Workshop setup - for instructors only!                              :cloud:
+  *NOTE* AWS CLI uses PyYAML, which means *I* can use PyYAML!  :-)
+
+
 ** Minimum participant requirements:
    + Laptop that can connect to site Wifi
    + Able to bring up a terminal/shell
@@ -14,7 +17,13 @@
 
    Google Cloud Shell is not just a good idea for Windows users, it's a good
    chouce for almost everyone.  *But* each participant would require a GCP
-   account.  Free, but could take time and be unfamiliar.
+   account.  Free, but could take time and be unfamiliar. 
+
+   *HIP TIP FOR CLOUD SHELL* Select 'boost' option - this amazing accelerator makes it
+   barely usable!  It's like living in the future!  
+   #+begin_example
+   Boost mode enabled
+   #+end_example
 
 ** Prepare a method to get AWS credentials to the participants
    Students will need an AWS CLI credentials file, updated every hour.  Because
@@ -33,3 +42,23 @@
          sed 's,110465657741_Mesosphere-PowerUser,Temp,' | \
          tr '\0' '\n'
    #+end_src
+** Provision Konvoy clusters for instructor (and maybe participants)
+   + add tag indicating specific workshop
+     + purpose: konvoy-training
+     + expiration: 24h
+     + location: San Diego
+     + owner: email or name
+       #+begin_src sh
+         if [ ! -x ./konvoy ] ; then
+             echo "This is not a konvoy working directory (no konvoy command) - exiting"
+             exit 1
+         fi
+         ./konvoy init
+       #+end_src
+** Post-event teardown
+   If each participant uses =konvoy up= themselves, the instructor will not be able to run
+   =konvoy down= on those clusters.  This means resources will be difficult to clean up.
+   Should the instructor bring up all clusters, showing one cluster as the first part of
+   the workshop?
+
+   
