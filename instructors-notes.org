@@ -1,3 +1,21 @@
+# -*- fill-column: 80; -*-
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:t |:t
+#+title: Konvoy Training Workshop - Instructor's Notes
+#+date: <2019-08-22 Thu>
+#+author: Greg Grubbs
+#+instructors: Greg Grubbs, Valerian Jone
+#+slide_header: github.com/mesosphere/konvoy-training
+#+email: ggrubbs@d2iq.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 26.2 (Org mode 9.2.3)
+# #+SETUPFILE: ../../../style/theme-readtheorg.setup
+#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+
 * Workshop setup - for instructors only!                              :cloud:
   *NOTE* AWS CLI uses PyYAML, which means *I* can use PyYAML!  :-)
 
