@@ -17,11 +17,12 @@
 #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 
 * Workshop setup - for instructors only!                              :cloud:
-  *NOTE* AWS CLI uses PyYAML, which means *I* can use PyYAML!  :-)
+  Location for the nonce: my fork at [[https://github.com/gregoryg/konvoy-training]]
 
+  *NOTE TO SELF* AWS CLI uses PyYAML, which means *I* can use PyYAML!  :-)
 
 ** Minimum participant requirements:
-   + Laptop that can connect to site Wifi
+   + Laptop that can connect to site WiFi
    + Able to bring up a terminal/shell
    + Ability to edit a file using =vim=, =nano=, =notepad++=, =sublime=, =emacs=
      or whatever
@@ -30,15 +31,16 @@
    + python/pip3
    + kubectl
    + docker!!
-   + aws cli
+   + AWS CLI
    + text file editor
 
    Google Cloud Shell is not just a good idea for Windows users, it's a good
-   chouce for almost everyone.  *But* each participant would require a GCP
+   choice for almost everyone.  *But* each participant would require a GCP
    account.  Free, but could take time and be unfamiliar. 
 
-   *HIP TIP FOR CLOUD SHELL* Select 'boost' option - this amazing accelerator makes it
-   almost usable!  It's like living in the future!  
+   *HIP TIP FOR CLOUD SHELL* Select 'boost' option - this makes the cloud shell usable.
+    I had the shell hang multiple times when on the non-boost sizing.
+    [[https://console.cloud.google.com/home/dashboard?cloudshell=true][Launch Google Cloud Shell]]
    #+begin_example
    Boost mode enabled
    #+end_example
@@ -63,7 +65,7 @@
 ** Provision Konvoy clusters for instructor (and maybe participants)
    + add tag indicating specific workshop
      + purpose: konvoy-training
-     + expiration: 24h
+     + expiration: 12h
      + location: San Diego
      + owner: email or name
        #+begin_src sh
@@ -73,10 +75,13 @@
          fi
          ./konvoy init
        #+end_src
-** Post-event teardown
+** Post-event tear-down
    If each participant uses =konvoy up= themselves, the instructor will not be able to run
    =konvoy down= on those clusters.  This means resources will be difficult to clean up.
    Should the instructor bring up all clusters, showing one cluster as the first part of
    the workshop?
 
    
+
+#  LocalWords:  Jone noexport SETUPFILE nano aws src eval PowerUser Eao sed konvoy fi
+#  LocalWords:  init
