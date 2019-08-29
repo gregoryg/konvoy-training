@@ -38,7 +38,7 @@
    account.  Free, but could take time and be unfamiliar. 
 
    *HIP TIP FOR CLOUD SHELL* Select 'boost' option - this amazing accelerator makes it
-   barely usable!  It's like living in the future!  
+   almost usable!  It's like living in the future!  
    #+begin_example
    Boost mode enabled
    #+end_example
