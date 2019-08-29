@@ -29,13 +29,17 @@ main features.
   :CUSTOM_ID: prerequisites
   :END:
 
+** Workshop syllabus
+   Please open the page at [[https://github.com/mesosphere/konvoy-training]]
+
+
 ** Workstation or Laptop requirements
 You need either a Linux, MacOS or a Windows laptop.
 
-#+BEGIN_QUOTE
+#+BEGIN_EXAMPLE
   For Windows, you need to use the
   [[https://console.cloud.google.com/cloudshell][Google Cloud Shell]].
-#+END_QUOTE
+#+END_EXAMPLE
 
 ** Software
 *** Docker
@@ -1423,7 +1427,7 @@ The application can be accessed with URLs follows below patten.
   kubectl expose deploy nginx --port 8080 --target-port 80 --type NodePort --name "svc-nginx"
 #+END_SRC
 
-- 3rd, create a ingress to expose service via Layer7 LB
+- 3rd, create ingress to expose service via Layer7 load balancer
 
 #+BEGIN_SRC sh
   cat << EOF | kubectl apply -f -
