@@ -28,9 +28,10 @@
      or whatever
    + Ability to install software (at least =pip3=, =aws=, =docker=, =kubectl=
 ** Software requirements
-   + python/pip3
-   + kubectl
-   + docker!!
+   + =pip3=
+   + =curl=
+   + =kubectl=
+   + =docker=
    + AWS CLI
    + text file editor
 
@@ -46,10 +47,11 @@
    #+end_example
 
 ** Prepare a method to get AWS credentials to the participants
-   Students will need an AWS CLI credentials file, updated every hour.  Because
-   there will be access and authentication issues with any form of file sharing,
-   I recommend getting each participant's email and emailing them every hour.
-   File sharing services are also an option, such as Google Drive or Dropbox.
+   Workshop participants will need a credentials file for AWS, updated every
+   hour.  Because there will be access and authentication issues with any form
+   of file sharing, I recommend getting each participant's email and emailing
+   them every hour.  File sharing services are also an option, such as Google
+   Drive or Dropbox.
 
    To start a new AWS session, use =maws= and the command below to display
    exactly what the participants will need to save to their own
