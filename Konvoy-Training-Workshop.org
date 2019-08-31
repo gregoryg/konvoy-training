@@ -1,5 +1,5 @@
 # -*- fill-column: 80; -*-
-#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t broken-links:nil
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
 #+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
 #+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:1
 #+options: todo:t |:t
@@ -45,7 +45,32 @@ You need either a Linux, MacOS or a Windows laptop.
 *** Docker
 If you use your laptop, you need to have Docker installed.
 
-Test that unprivileged user can use =docker= commands
+  + MacOS
+     [[https://download.docker.com/mac/beta/Docker.dmg][Download Docker Desktop for Mac]]
+
+     The whale in your status bar indicates Docker is running and accessible.
+
+     [[file:images/happy-docker-whale-in-status-bar.png]]
+  + Windows
+       Click on the [[https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe][Docker Dektop installer .exe file]]
+
+       Run the installer
+
+       Run Docker
+
+       Whale in the task bar tells you it's running!
+
+       [[file:images/docker_icon_taskbar.jpg]]
+  + Linux
+**** Debian/Ubuntu
+      Package name is =docker.io=
+      #+begin_src sh
+      sudo apt install docker.io
+      #+end_src
+**** RHEL/Centos
+**** After installation
+
+Test that the unprivileged user can use =docker= commands
 #+begin_src sh
 docker ps
 #+end_src
@@ -353,8 +378,7 @@ and 3 worker nodes
 #+end_example
 
 
-* 2. Expose a Kubernetes Application using a Service Type Load Balancer
-(L4)
+* 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
    :PROPERTIES:
    :CUSTOM_ID: expose-a-kubernetes-application-using-a-service-type-load-balancer-l4
    :END:
@@ -583,6 +607,7 @@ useless as we can simply not expose these apps if we want to restrict
 access. But, in fact, it makes sense to also create network policies to
 avoid cases where an app is exposed by mistake.
 
+** Lab Steps
 Create a network policy to deny any ingress
 
 #+BEGIN_SRC sh
@@ -714,6 +739,7 @@ clusters as they mature. Choosing a solution that supports CSI
 integration will allow your business to adopt the latest and greatest
 storage solutions with ease.
 
+** Lab Steps
 When Konvoy is deployed on AWS, a =StorageClass= is created
 automatically as you can see below:
 
