@@ -164,8 +164,8 @@ an updated token.
      #+begin_src sh
      kubectl version
      #+end_src
-*** =helm=
-    TODO: Add installation instructions for helm
+*** Helm
+    To install Helm, visit [[https://github.com/helm/helm/releases/tag/v2.14.3][Helm release page]] and download the =helm= executable for your OS
 *** wget/curl
 
 ** Install Konvoy
@@ -1021,11 +1021,24 @@ Login with the user =admin= and the password =password=.
   :CUSTOM_ID: deploy-apache-kafka-using-kudo
   :END:
 
-The Kubernetes Universal Declarative Operator (KUDO) is a highly
-productive toolkit for writing operators for Kubernetes. Using KUDO, you
-can deploy your applications, give your users the tools they need to
-operate it, and understand how it's behaving in their environments ---
-all without a PhD in Kubernetes.
+** Objectives
+
+- Deploy a stateful application that requires orchestration to deploy (ZooKeeper,
+then Kafka)
+- Show the usefulness of a purely declarative means of controlling software
+  lifecycle using specification, not Go code
+
+
+** Why is this Important?
+
+The Kubernetes Universal Declarative Operator (KUDO) is a highly productive
+toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your
+applications, give your users the tools they need to operate it and manage its
+lifecyle, and understand how it's behaving in their environments.  
+
+Orchestration is handled purely by declaration in YAML without requiring code
+for conditional logic and other orchestration requirements.
+
 
 ** Resources
    Kudo community web site at kudo.dev
@@ -1036,6 +1049,19 @@ all without a PhD in Kubernetes.
 
 
 ** Lab Steps
+
+We will need to have the KUDO operators in order to install ZooKeeper and
+Kafka.  
+
+If you use =git=, simply clone the KUDO operators repository
+#+begin_src 
+git clone https://github.com/kudobuilder/operators.git
+#+end_src
+
+Otherwise, download a ZIP file of the directory by visiting
+https://github.com/kudobuilder/operators, then clicking on the "Clone or
+download" button and selecting "Download ZIP"
+
 Run the following commands to deploy KUDO on your Kubernetes cluster:
 
 #+begin_src sh
@@ -1071,8 +1097,13 @@ Check the status of the KUDO controller:
 
 *** Deploy ZooKeeper using KUDO
 
+We will need the =operators= directory downloaded at the beginning of this lab.
+
+Assuming you cloned or unzipped the directory to =/home/myuser/operators=
+
 #+begin_src sh
-  kubectl kudo install zookeeper --instance=zk
+  cd /home/myuser/operators/repository/zookeeper/operator
+  kubectl kudo install . --instance=zk
 #+end_src
 #+begin_example
   operator.kudo.k8s.io/v1alpha1/zookeeper created
@@ -1110,6 +1141,8 @@ And check that the corresponding pods are running:
   zk-zookeeper-2                    1/1     Running   0          81s
 #+end_example
 
+*** Deploy Kafka using KUDO
+
 Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
 
 #+begin_src sh
@@ -1145,7 +1178,8 @@ And check that the corresponding pods are running:
   kafka-kafka-2                          1/1     Running   0          118s
 #+end_example
 
-Produce messages in Kafka:
+*** Produce messages in Kafka
+    This Deployment will continuously place messages on a Kafka topic
 
 #+begin_src sh
   cat <<EOF | kubectl create -f -
@@ -1170,7 +1204,7 @@ Produce messages in Kafka:
   EOF
 #+end_src
 
-Consume messages from Kafka:
+*** Consume messages from Kafka:
 
 #+begin_src sh
   cat <<EOF | kubectl create -f -
@@ -1196,7 +1230,7 @@ Consume messages from Kafka:
   EOF
 #+end_src
 
-Check the logs:
+*** Check the logs
 
 #+begin_src sh
   kubectl logs $(kubectl get pods -l app=kudo-kafka-consumer -o jsonpath='{.items[0].metadata.name}') --follow
@@ -1210,9 +1244,10 @@ Check the logs:
   Message: b'2019-07-11T16:28:49Z;1;0;5097'
 #+end_example
 
-KUDO is creating CRDs (new objects) in Kubernetes and you can get
-information about these objects like you can get information about
-pods, deployments, ...
+*** Explore KUDO concepts
+KUDO is creating new objects in Kubernetes called Custom Resource Definitions
+(CRDs).  You can get information about these objects like you can get
+information about pods, deployments, ...
 
 Run this command to get the list of CRDs created by KUDO:
 
@@ -1273,6 +1308,7 @@ And get information about the KUDO Kafka instance:
 This is also the approach you take to delete a running instance (=kubectl delete
 instances.kudo.dev kafka=), but you can keep it running.
 
+*** Upgrade Kafka Version and Configuration
 Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka
 operator is 0.2.0) using the following command:
 

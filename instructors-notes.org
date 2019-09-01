@@ -28,11 +28,15 @@
      or whatever
    + Ability to install software (at least =pip3=, =aws=, =docker=, =kubectl=
 ** Software requirements
+   The *real* requirements that should suffice
+
    + =pip3=
    + =curl= and =wget=
    + =kubectl=
    + =docker=
    + AWS CLI
+   + =bunzip2= (used by tar for the Konvoy bundle)
+   + =gunzip= or =git= (for the KUDO operator directory)
    + text file editor
 
    Google Cloud Shell is not just a good idea for Windows users, it's a good
