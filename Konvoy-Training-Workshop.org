@@ -1023,8 +1023,8 @@ Login with the user =admin= and the password =password=.
 
 ** Objectives
 
-- Deploy a stateful application that requires orchestration to deploy (ZooKeeper,
-then Kafka)
+- Deploy a stateful application that requires orchestration to deploy
+  (ZooKeeper, then Kafka)
 - Show the usefulness of a purely declarative means of controlling software
   lifecycle using specification, not Go code
 
@@ -1049,7 +1049,7 @@ for conditional logic and other orchestration requirements.
 
 
 ** Lab Steps
-*** Install KUDO on the Konvoy cluster
+*** Download or clone the KUDO Operators we will use
 We will need to have the KUDO operators in order to install ZooKeeper and
 Kafka.  
 
@@ -1061,6 +1061,8 @@ git clone https://github.com/kudobuilder/operators.git
 Otherwise, download a ZIP file of the directory by visiting
 https://github.com/kudobuilder/operators, then clicking on the "Clone or
 download" button and selecting "Download ZIP"
+
+*** Install KUDO on the Konvoy cluster
 
 Run the following commands to deploy KUDO on your Kubernetes cluster:
 
@@ -1154,18 +1156,20 @@ And check that the corresponding pods are running:
 #+end_example
 
 *** Deploy Kafka using KUDO
-
 Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
 
+Assuming you cloned or unzipped the directory to =/home/myuser/operators=
 #+begin_src sh
-  kubectl kudo install kafka --instance=kafka --version=0.1.2
+  cd /home/myuser/operators/repository/kafka/operator
+    kubectl kudo install . --instance=kafka --version=0.1.2
 #+end_src
 
 Check the status of the deployment:
 
-#+begin_example
+#+begin_src sh
   kubectl kudo plan status --instance=kafka
-
+#+end_src
+#+begin_example
   Plan(s) for "kafka" in namespace "default":
   .
   └── kafka (Operator-Version: "kafka-0.1.2" Active-Plan: "kafka-deploy-975266742")
