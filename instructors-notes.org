@@ -29,7 +29,7 @@
    + Ability to install software (at least =pip3=, =aws=, =docker=, =kubectl=
 ** Software requirements
    + =pip3=
-   + =curl=
+   + =curl= and =wget=
    + =kubectl=
    + =docker=
    + AWS CLI

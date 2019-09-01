@@ -164,6 +164,9 @@ an updated token.
      #+begin_src sh
      kubectl version
      #+end_src
+*** =helm=
+    TODO: Add installation instructions for helm
+*** wget/curl
 
 ** Install Konvoy
 Clone the GitHub repository and run the following commands to uncompress
@@ -1023,6 +1026,14 @@ productive toolkit for writing operators for Kubernetes. Using KUDO, you
 can deploy your applications, give your users the tools they need to
 operate it, and understand how it's behaving in their environments ---
 all without a PhD in Kubernetes.
+
+** Resources
+   Kudo community web site at kudo.dev
+   
+   Public code hosted at https://github.com/kudobuilder
+
+   Community Slack channel at kubernetes.slack.com #kudo
+
 
 ** Lab Steps
 Run the following commands to deploy KUDO on your Kubernetes cluster:
