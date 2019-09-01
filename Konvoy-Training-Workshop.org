@@ -1049,7 +1049,7 @@ for conditional logic and other orchestration requirements.
 
 
 ** Lab Steps
-
+*** Install KUDO on the Konvoy cluster
 We will need to have the KUDO operators in order to install ZooKeeper and
 Kafka.  
 
@@ -1082,6 +1082,7 @@ Check the status of the KUDO controller:
 #+end_example
 
 *** Install the KUDO CLI
+    KUDO requires downloading a =kubectl-kudo= command for the command line interface.  
 **** MacOS
 
 #+begin_src sh
@@ -1095,9 +1096,20 @@ Check the status of the KUDO controller:
   chmod +x /usr/bin/kubectl-kudo
 #+end_src
 
+**** Verify installation
+     #+begin_src sh
+     kubectl-kudo version
+     kubectl kudo version
+     #+end_src
+
+     Expected output from both commands
+     #+begin_example
+     KUDO Version: version.Info{GitVersion:"0.5.0", GitCommit:"f9f6aa85", BuildDate:"2019-08-02T15:05:56Z", GoVersion:"go1.12.5", Compiler:"gc", Platform:"linux/amd64"}
+     #+end_example
+
 *** Deploy ZooKeeper using KUDO
 
-We will need the =operators= directory downloaded at the beginning of this lab.
+We will need the =operators= directory that you downloaded at the beginning of this lab.
 
 Assuming you cloned or unzipped the directory to =/home/myuser/operators=
 
