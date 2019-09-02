@@ -1,6 +1,6 @@
 # -*- fill-column: 80; -*-
 #+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:nil arch:headline author:t broken-links:nil
-#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
+#+options: c:nil creator:nil d:t date:t e:t email:nil f:t inline:t num:nil
 #+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:1
 #+options: todo:t |:t
 #+title: Konvoy Training Workshop
@@ -170,18 +170,12 @@ an updated token.
 *** =kubectl= 
     For any OS, visit [[https://kubernetes.io/docs/tasks/tools/install-kubectl/][Install and Set Up kubectl]] on kubernetes.io
 
-**** MacOS and Linux
-     #+begin_src sh
-       curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/darwin/amd64/kubectl
-       chmod +x ./kubectl
-       sudo mv ./kubectl /usr/local/bin/kubectl
-     #+end_src
-
 **** After installation
-     Check =kubectl= was successfully installed and in your path
+     Verify that =kubectl= was successfully installed and in your path
      #+begin_src sh
      kubectl version
      #+end_src
+
 *** Helm
     To install Helm, visit [[https://github.com/helm/helm/releases/tag/v2.14.3][Helm release page]] and download the =helm= executable for your OS
 *** wget/curl
@@ -548,7 +542,6 @@ instead:
   sudo apt install netcat
   nc -z $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
 #+end_src
-
 * 3. Expose a Kubernetes Application using an Ingress (L7)
   :PROPERTIES:
   :CUSTOM_ID: expose-a-kubernetes-application-using-an-ingress-l7
@@ -957,10 +950,11 @@ In this lab, we'll deploy the
 
 To deploy the chart, you need to run the following command:
 
-#+begin_src sh
+#+begin_src sh 
   helm install stable/jenkins --name jenkins --version 1.5.0 --set master.adminPassword=password
 #+end_src
 
+#+RESULTS:
 #+begin_example
   NAME:   jenkins
   LAST DEPLOYED: Wed Aug  7 17:21:32 2019
@@ -1023,13 +1017,27 @@ NAME      TYPE           CLUSTER-IP   EXTERNAL-IP                               
 You need to wait for a few minutes while the Load Balancer is created on
 AWS and the name resolution in place.
 
-#+begin_src sh
-  until nslookup $(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+#+begin_src sh :results replace verbatim :exports code
+until nslookup $(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname})
   do
     sleep 1
   done
   echo "Open http://$(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname}):8080 to access the Jenkins UI"
 #+end_src
+
+#+begin_example
+Server:		100.115.92.193
+Address:	100.115.92.193#53
+
+Non-authoritative answer:
+Name:	a3b2b652ab4354e7f8eded17d4323afb-1148896961.us-west-2.elb.amazonaws.com
+Address: 52.37.201.113
+Name:	a3b2b652ab4354e7f8eded17d4323afb-1148896961.us-west-2.elb.amazonaws.com
+Address: 52.34.15.160
+
+Open http://a3b2b652ab4354e7f8eded17d4323afb-1148896961.us-west-2.elb.amazonaws.com:8080 to access the Jenkins UI
+#+end_example
+
 
 Go to the corresponding URL to access the Gitlab.
 
