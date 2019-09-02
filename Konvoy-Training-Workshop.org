@@ -24,6 +24,24 @@
 During this training, you'll learn how to deploy Konvoy and to use its
 main features.
 
+* Table of Contents                                                   :TOC_1:
+
+- [[#introduction][Introduction]]
+- [[#prerequisites][Prerequisites]]
+- [[#deploy-a-konvoy-cluster][1. Deploy a Konvoy cluster]]
+- [[#expose-a-kubernetes-application-using-a-service-type-load-balancer-l4][2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)]]
+- [[#expose-a-kubernetes-application-using-an-ingress-l7][3. Expose a Kubernetes Application using an Ingress (L7)]]
+- [[#leverage-network-policies-to-restrict-access][4. Leverage Network Policies to restrict access]]
+- [[#leverage-persistent-storage-using-csi][5. Leverage persistent storage using CSI]]
+- [[#deploy-jenkins-using-helm][6. Deploy Jenkins using Helm]]
+- [[#deploy-apache-kafka-using-kudo][7. Deploy Apache Kafka using KUDO]]
+- [[#scale-a-konvoy-cluster][8. Scale a Konvoy cluster]]
+- [[#konvoy-monitoring][9. Konvoy monitoring]]
+- [[#konvoy-loggingdebugging][10. Konvoy logging/debugging]]
+- [[#setting-up-an-external-identity-provider][11. Setting up an external identity provider]]
+- [[#upgrade-a-konvoy-cluster][12. Upgrade a Konvoy cluster]]
+- [[#ingress-troubleshooting][13. Bonus Lab: Ingress troubleshooting]]
+
 
 * Prerequisites
   :PROPERTIES:
@@ -214,6 +232,7 @@ Flags:
 
 Use "konvoy [command] --help" for more information about a command.
 #+end_example
+
 * 1. Deploy a Konvoy cluster
   :PROPERTIES:
   :CUSTOM_ID: deploy-a-konvoy-cluster
@@ -1837,7 +1856,7 @@ Check that the Redis and the http-echo apps are still accessible
 
 * 13. Bonus Lab: Ingress troubleshooting
    :PROPERTIES:
-   :CUSTOM_ID: ingress-troubleshooting.
+   :CUSTOM_ID: ingress-troubleshooting
    :END:
 
 In this section, we will leverage Konvoy logging to troubleshoot Ingress
