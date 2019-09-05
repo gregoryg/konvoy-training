@@ -56,10 +56,8 @@ main features.
 ** Workstation or Laptop requirements
 You need either a Linux, MacOS or a Windows laptop.
 
-#+begin_example
-  For Windows, you need to use the
+  For Windows, please use the
   [[https://console.cloud.google.com/cloudshell][Google Cloud Shell]].
-#+end_example
 
 ** Software
 *** Docker
