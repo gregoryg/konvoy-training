@@ -1521,6 +1521,12 @@ by clicking on the =Prometheus= icon on the Konvoy UI.
 #+CAPTION: Prometheus UI
 [[file:images/prometheus.png]]
 
+
+*** Jenkins
+	To see a dashboard of our Jenkins instance installed earlier, go to the
+	Grafana UI and import [[https://grafana.com/grafana/dashboards/6479][Jenkins Dashboard #6479]] or [[https://grafana.com/grafana/dashboards/9964][Jenkins: Performance and Health Overview #9964]]
+
+*** Kafka
 The KUDO Kafka operator comes by default with the JMX Exporter agent enabled.
 
 When the Kafka operator is deployed with parameter =METRICS_ENABLED=true=
@@ -1540,7 +1546,7 @@ Run the following command to enable Kafka metrics export:
 In the Grafana UI, click on the + sign on the left and select =Import=.
 
 Copy the content of this
-[[https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v0.1/resources/grafana-dashboard.json][file]]
+[[https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v0.2/resources/grafana-dashboard.json][file]]
 as shown in the picture below.
 
 #+CAPTION: Grafana import
