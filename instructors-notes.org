@@ -50,7 +50,7 @@
    Boost mode enabled
    #+end_example
 
-** Prepare a method to get AWS credentials to the participants
+** OBSOLETE: Prepare a method to get AWS credentials to the participants :noexport:
    Workshop participants will need a credentials file for AWS, updated every
    hour.  Because there will be access and authentication issues with any form
    of file sharing, I recommend getting each participant's email and emailing
@@ -68,6 +68,10 @@
          sed 's,110465657741_Mesosphere-PowerUser,Temp,' | \
          tr '\0' '\n'
    #+end_src
+** prepare participants' Jump Servers
+*** TODO Clone the Workshop repo for instructors
+	#+begin_src sh
+	#+end_src
 ** Provision Konvoy clusters for instructor (and maybe participants)
    + add tag indicating specific workshop
      + purpose: konvoy-training
@@ -91,3 +95,5 @@
 
 #  LocalWords:  Jone noexport SETUPFILE nano aws src eval PowerUser Eao sed konvoy fi
 #  LocalWords:  init
+
+** stuff
