@@ -16,54 +16,40 @@ During this training, you'll learn how to deploy Konvoy and to use its main feat
 * [8. Scale a Konvoy cluster](#8-scale-a-konvoy-cluster)
 * [9. Konvoy monitoring](#9-konvoy-monitoring)
 * [10. Konvoy logging/debugging](#10-konvoy-loggingdebugging)
-* [11. Setting up an external identity provider](#11-setting-up-an-external-identity-provider)
-* [12. Upgrade a Konvoy cluster](#12-upgrade-a-konvoy-cluster)
+* [11. Upgrade a Konvoy cluster](#11-upgrade-a-konvoy-cluster)
+* [Appendix 1. Setting up an external identity provider](#appendix-1-setting-up-an-external-identity-provider)
 
 ## Prerequisites
 
 You need either a Linux, MacOS or a Windows laptop.
 
+
+
+## Jumpserver
+
+Jumpservers have been deployed for each student with all prerequisites installed. First, go to the student data spreadsheet and select a host by entering your name.  Then, download the ssh-private-key (id_rsa_student#) and change the file permissions.  Finally, ssh to the ipaddress of your assigned jumpserver using the -i option to specify the identity file to be used.  The username for the Jumpserver is "centos".
+
+For Mac and Linux clients you must change the permission on the file.
+```
+chmod 400 id_rsa_student#
+```
+```
+ssh -i id_rsa_student# centos@jumpserver-ip-address
+```
+
+
 >For Windows, you need to use the [Google Cloud Shell](https://console.cloud.google.com/cloudshell).
+Once your Google Cloud Shell has started, you will have to copy the contents of you id_rsa_student#.pem file to a local file in the cloud shell.  Then change the permission on the file and ssh into the jump host.
 
-If you use your laptop, you need to have Docker installed.
-
-You also need to install the AWS CLI running the following commands:
-
-```bash
-pip3 install awscli --upgrade --user
-sudo cp ~/.local/bin/aws /usr/bin/
-```
-
-Add the following information provided by the instructor to the `~/.aws/credentials` file (or create the file if necessary):
 
 ```
-[Temp]
-aws_access_key_id     = xxx
-aws_secret_access_key = xxx
-aws_session_token     = xxx
+vi id_rsa_student#
 ```
-
-This token will be valid for one hour.
-
-Run the following command to use this profile:
-
-```bash
-export AWS_PROFILE=Temp
 ```
-
-If you don't finish the deployment on time, the instructor will provide an updated token.
-
-Clone the Github repository and run the following commands to uncompress the Konvoy binaries:
-
-```bash
-bzip2 -d konvoy_*.tar.bz2
-tar xvf konvoy_*.tar
+chmod 400 id_rsa_student#
 ```
-
-Go to the `konvoy` directory:
-
-```bash
-cd konvoy_*/
+```
+ssh -i id_rsa_student# centos@jumpserver-ip-address
 ```
 
 ## 1. Deploy a Konvoy cluster
@@ -76,53 +62,22 @@ cd konvoy_*/
 There are many ways to deploy a kubernetes cluster from a fully manual procedure to using a fully automated or opinionated SaaS. Cluster sizes can also widely vary from a single node deployment on your laptop, to thousands of nodes in a single logical cluster, or even across multiple clusters. Thus, picking a deployment model that suits the scale that you need as your business grows is important.
 
 
-Execute the following command to create a `cluster.yaml` template file:
-
-```bash
-./konvoy init
-```
-
-Edit the `cluster.yaml` file to add the `expiration` tag and update the number of workers as below:
+Change directories into the lab directory:
 
 ```
-spec:
-  provider: aws
-  aws:
-    region: us-west-2
-    availabilityZones:
-    - us-west-2c
-    tags:
-      owner: djannot
-      expiration: 12h
-      nodePools:
-      - name: worker
-        count: 5
+cd ~/lab
 ```
-
-Change also the Kubernetes version from `1.15.2` to `1.15.2` in the 2 corresponding fields:
-```
-...
-spec:
-  kubernetes:
-    version: 1.15.1
-...
-  addons:
-    configVersion: stable-1.15.1-0
-...
-```
-
-A tag is useful to track the AWS instances related to your Konvoy cluster (for example).
 
 Deploy your cluster using the command below:
 
 ```bash
-./konvoy up --yes
+konvoy up --yes
 ```
 
 The output should be similar to:
 
 ```
-./konvoy up --yes                                                                  
+konvoy up --yes                                                                  
 This process will take about 15 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
 
 STAGE [Provisioning Infrastructure]
@@ -157,7 +112,7 @@ STAGE [Removing Disabled Addons]
 
 Kubernetes cluster and addons deployed successfully!
 
-Run `./konvoy apply kubeconfig` to update kubectl credentials.
+Run `konvoy apply kubeconfig` to update kubectl credentials.
 
 Navigate to the URL below to access various services running in the cluster.
   https://a7e039f1a05a54f45b36e063f5aee077-287582892.us-west-2.elb.amazonaws.com/ops/landing
@@ -171,14 +126,14 @@ If the cluster was recently created, the dashboard and services may take a few m
 If you get any error during the deployment of the addons (it can happen with network connectivity issues), then, you can run the following command to redeploy them:
 
 ```
-./konvoy deploy addons --yes
+konvoy deploy addons --yes
 ```
 
-As soon as your cluster is successfully deployed, the URL and the credentials to access your cluster are displayed.
+As soon as your cluster is successfully deployed, the URL and the credentials to access your cluster are displayed. When you lauch your dashboard URL in your browser the first screen will ask you to select "login or generate token", select login and use the credentials provided.
 
 If you need to get this information later, you can execute the command below:
 ```bash
-./konvoy get ops-portal
+konvoy get ops-portal
 ```
 
 ![Konvoy UI](images/konvoy-ui.png)
@@ -191,22 +146,22 @@ To configure kubectl to manage your cluster, you simply need to run the followin
 
 ```
 mv ~/.kube/config ~/.kube/config.old
-./konvoy apply kubeconfig
+konvoy apply kubeconfig
 ```
 
-You can check that the Kubernetes cluster has been deployed using the version `1.14.4` with 3 control nodes and 3 workers nodes
+You can check that the Kubernetes cluster has been deployed using the version `1.15.2` with 3 control nodes and 5 workers nodes
 
 ```bash
 kubectl get nodes
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.1
-ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.1
-ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.1
-ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.1
+ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.2
+ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.2
+ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.2
+ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 ```
 
 ## 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
@@ -354,7 +309,7 @@ curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons 
 curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 ```
 
-You can also set some Traefik annotations to use some advanced features as described in this [document](https://docs.traefik.io/configuration/backends/kubernetes/).
+You can also set some Traefik annotations to use some advanced features as described in this [document](https://docs.traefik.io/providers/kubernetes-crd/).
 
 ## 4. Leverage Network Policies to restrict access
 
@@ -692,7 +647,7 @@ done
 echo "Open http://$(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname}):8080 to access the Jenkins UI"
 ```
 
-Go to the corresponding URL to access the Gitlab.
+Go to the URL displayed to access Jenkins.
 
 Login with the user `admin` and the password `password`.
 
@@ -700,12 +655,22 @@ Login with the user `admin` and the password `password`.
 
 The Kubernetes Universal Declarative Operator (KUDO) is a highly productive toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your applications, give your users the tools they need to operate it, and understand how it's behaving in their environments — all without a PhD in Kubernetes.
 
+
+Install the KUDO CLI (on Linux):
+
+```bash
+wget https://github.com/kudobuilder/kudo/releases/download/v0.7.2/kubectl-kudo_0.7.2_linux_x86_64
+sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/local/bin/kubectl-kudo
+chmod +x /usr/local/bin/kubectl-kudo
+```
+
 Run the following commands to deploy KUDO on your Kubernetes cluster:
 
 ```bash
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/00-prereqs.yaml
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/10-crds.yaml
-kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/20-deployment.yaml
+kubectl kudo init
+
+
+$KUDO_HOME has been configured at /Users/djannot/.kudo.
 ```
 
 Check the status of the KUDO controller:
@@ -714,21 +679,6 @@ Check the status of the KUDO controller:
 kubectl get pods -n kudo-system
 NAME                        READY   STATUS    RESTARTS   AGE
 kudo-controller-manager-0   1/1     Running   0          84s
-```
-
-Install the KUDO CLI (on Mac):
-
-```bash
-brew tap kudobuilder/tap
-brew install kudo-cli
-```
-
-Install the KUDO CLI (on Linux):
-
-```bash
-wget https://github.com/kudobuilder/kudo/releases/download/v0.5.0/kubectl-kudo_0.5.0_linux_x86_64
-sudo mv kubectl-kudo_0.5.0_linux_x86_64 /usr/bin/kubectl-kudo
-chmod +x /usr/bin/kubectl-kudo
 ```
 
 Deploy ZooKeeper using KUDO:
@@ -742,7 +692,7 @@ No instance named 'zk' tied to this 'zookeeper' version has been found. Do you w
 instance.kudo.k8s.io/v1alpha1/zk created
 ```
 
-Check the status of the deployment:
+Check the status of the deployment: (Will only show status when deploying, otherwise will report a plan status is not found)
 
 ```bash
 kubectl kudo plan status --instance=zk
@@ -775,7 +725,7 @@ Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
 kubectl kudo install kafka --instance=kafka --version=0.1.2
 ```
 
-Check the status of the deployment:
+Check the status of the deployment:(Will only show status when deploying, otherwise will report a plan status is not found)
 
 ```bash
 kubectl kudo plan status --instance=kafka
@@ -978,6 +928,16 @@ status:
   status: COMPLETE
 ```
 
+And check that the corresponding Pods have been replaced:
+
+```bash
+kubectl get pods | grep kafka
+
+kafka-kafka-0                          1/1     Running   0          3m33s
+kafka-kafka-1                          1/1     Running   0          88s
+kafka-kafka-2                          1/1     Running   0          12s
+```
+
 You can also easily update the configuration of your Kafka cluster.
 
 For example, you can add more brokers using the command below.
@@ -1021,8 +981,6 @@ kudo-kafka-generator-d655d6dff-mx9fz   1/1     Running   0          3h34m
 
 ## 8. Scale a Konvoy cluster
 
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
-
 Edit the `cluster.yaml` file to change the worker count from 5 to 6:
 ```
 ...
@@ -1032,7 +990,7 @@ Edit the `cluster.yaml` file to change the worker count from 5 to 6:
 ...
 ```
 
-And run `./konvoy up --yes` again.
+And run `konvoy up --yes` again.
 
 Check that there are now 6 kubelets deployed:
 
@@ -1040,15 +998,15 @@ Check that there are now 6 kubelets deployed:
 kubectl get nodes
 
 NAME                                         STATUS   ROLES    AGE    VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.1
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.15.1
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.15.1
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.15.1
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.15.1
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.1
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.1
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   2m2s   v1.15.2
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   45m    v1.15.2
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   45m    v1.15.2
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   48m    v1.15.2
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   46m    v1.15.2
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   47m    v1.15.2
 ```
 
 ## 9. Konvoy monitoring
@@ -1111,7 +1069,7 @@ Then, search for `redis`:
 
 You'll see all the logs related to the redis Pod and Service you deployed previously.
 
-### 13.1. Ingress troubleshooting.
+### 10.1. Ingress troubleshooting.
 
 In this section, we will leverage Konvoy logging to troubleshoot Ingress failure issue.
 
@@ -1119,7 +1077,7 @@ We will deploy a nginx application and expose it via L7 loadbalancer. The applic
 
 `http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/`
 
-* first, let's deploy a nginx application and scale it to 3
+* 1st, let's deploy a nginx application and scale it to 3
 
 ```bash
 kubectl run --image=nginx --replicas=3 --port=80 --restart=Always nginx
@@ -1155,22 +1113,22 @@ EOF
 The `Traefik dashboard` indicates the nginx application is ready to receive traffic but if you try access nginx with URL listed below, you will notice `404 Not Found` error like:
 
 ```bash
-
 curl -k https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/
-
 ```
+
+Don't forget the trailing slash at the end of the URL. Otherwise, you won't generate a 404 error.
 
 ![Traefik nginx](images/trafik_404.png)
 
-Let's troubleshooting this failure with Konvoy Kibana.
+Let's troubleshoot this failure with Konvoy Kibana.
 
 ![Kibana nginx](images/kibana_nginx.png)
 
-With Konvoy Kibana's near real time log collection and indexing, we can easily identify the ingress traffic was eventually handled by a pod `kubernetes.pod_name:nginx-755464dd6c-dnvp9` in nginx service. The log also gave us more information on the failure, `"GET /applications/nginx/ HTTP/1.1" 404`, which tell us that nginx can't find resource at path `/applications/nginx/`. 
+With Konvoy Kibana's near real time log collection and indexing, we can easily identify the ingress traffic was eventually handled by a pod `kubernetes.pod_name:nginx-755464dd6c-dnvp9` in nginx service. The log also gave us more information on the failure, `"GET /applications/nginx/ HTTP/1.1" 404`, which tell us that nginx can't find resource at path `/applications/nginx/`.
 
-That is neat! Because w/o Kibana, you wouldn't know which Pod in our nginx service handles this request. (Our nginx deployment example launched 3 Pods to serve HTTP request) Not mention if there are multiple nginx service exists in the same K8s cluster but hosted at different namespace. 
+That is neat! Because w/o Kibana, you wouldn't know which Pod in our nginx service handles this request. (Our nginx deployment example launched 3 Pods to serve HTTP request) Not mention if there are multiple nginx service exists in the same K8s cluster but hosted at different namespace.
 
-To fix this failure requires some knownledge on Nginx configuration. In general, when nginx is launched with default configuration, it serves a virtual directory on its `ROOT` path `(/)`. When receives HTTP requests, the nginx walk through its virtual directory to return back resources to the client. 
+To fix this failure requires some knownledge on Nginx configuration. In general, when nginx is launched with default configuration, it serves a virtual directory on its `ROOT` path `(/)`. When receives HTTP requests, the nginx walk through its virtual directory to return back resources to the client.
 
 In terms of out example, the `Ingress` configuration we submitted to k8s was configured to a path at `/applications/nginx/`. The `traefik` ingress controller sees this `Ingress configuration` and forwards any resource request at path `/applications/nginx/` to the down stream nginx service at the same path. The pod `kubernetes.pod_name:nginx-755464dd6c-dnvp9` received this request but nginx instance in this pod failed to locate any resource under path `/applications/nginx/`. That is the reason we saw this failure, `"GET /applications/nginx/ HTTP/1.1" 404`.  
 
@@ -1201,111 +1159,23 @@ EOF
 ```
 ![dashboard nginx](images/trafik_nginx_200.png)
 
-## 11. Setting up an external identity provider
+## 11. Upgrade a Konvoy cluster
 
-Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
-
-Google's OAuth 2.0 APIs can be used for both authentication and authorization.
-
-Go to [Google’s developer console](https://console.developers.google.com/) and create a project.
-
-Select that project.
-
-In the Credentials tab of that project start with setting up the OAuth consent screen.
-
-Indicate an `Application name` and add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`) into `Authorized domains`.
-
-Save the OAuth consent screen configuration.
-
-Press Create credentials, select OAuth client ID, and then Web application.
-
-Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/callback`.
-
-![google-idp-application](images/google-idp-application.png)
-
-Save the configuration and note down the client ID and the client secret.
-
-![google-idp-credentials](images/google-idp-credentials.png)
-
-Run the following command (after inserting your email address) to provide admin rights to your Google account:
-
-```bash
-cat <<EOF | kubectl create -f -
-kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1
-metadata:
-  name: admin-binding
-subjects:
-- kind: User
-  name: <your Google email>
-roleRef:
-  kind: ClusterRole
-  name: cluster-admin
-  apiGroup: rbac.authorization.k8s.io
-EOF
-```
-
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
-
-Edit the `cluster.yaml` file and update the `dex` section as below:
-
-```
-    - name: dex
-      enabled: true
-      values: |
-        config:
-          connectors:
-          - type: oidc
-            id: google
-            name: Google Accounts
-            config:
-              issuer: https://accounts.google.com
-              clientID: <client ID>
-              clientSecret: <client secret>
-              redirectURI: https://<public-cluster-dns-name>/dex/callback
-              userIDKey: email
-              userNameKey: email
-```
-
-And run `./konvoy up --yes` again to apply the change.
-
-When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
-
-![google-idp-token](images/google-idp-token.png)
-
-Follow the instructions in the page, but use the command below in the second step to get the right value for the `server` parameter:
-
-```bash
-kubectl config set-cluster kubernetes-cluster \
-    --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
-    --server=$(kubectl config view | grep server | awk '{ print $2 }')
-```
-
-Run the following command to check that you can administer the Kubernetes cluster with your Google account:
-
-```bash
-kubectl get nodes
-```
-
-## 12. Upgrade a Konvoy cluster
-
-Update the `~/.aws/credentials` file with the new information provided by your instructor.
-
-Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.1` to `1.15.2` in the 2 corresponding fields:
+Edit the `cluster.yaml` file to change the Kubernetes version from `1.15.2` to `1.15.3` in the 2 corresponding fields:
 ```
 ...
 spec:
   kubernetes:
-    version: 1.15.2
+    version: 1.15.3
 ...
   - name: worker
   addons:
-    configVersion: stable-1.15.2-0
+    configVersion: stable-1.15.3-0
 ...
 ```
 
 ```bash
-./konvoy up --yes --upgrade --force-upgrade
+konvoy up --yes --upgrade --force-upgrade
 
 This process will take about 15 minutes to complete (additional time may be required for larger clusters)
 
@@ -1403,7 +1273,7 @@ STAGE [Removing Disabled Addons]
 
 Kubernetes cluster and addons deployed successfully!
 
-Run `./konvoy apply kubeconfig` to update kubectl credentials.
+Run `konvoy apply kubeconfig` to update kubectl credentials.
 
 Navigate to the URL below to access various services running in the cluster.
   https://a1efd30f824244733adc1fb95157b9b1-2077667181.us-west-2.elb.amazonaws.com/ops/landing
@@ -1414,7 +1284,7 @@ And login using the credentials below.
 If the cluster was recently created, the dashboard and services may take a few minutes to be accessible.
 ```
 
-If there is any error during the upgrade, run the `./konvoy up --yes --upgrade --force-upgrade` again. It can happen when the `drain` command times out.
+If there is any error during the upgrade, run the `konvoy up --yes --upgrade --force-upgrade` again. It can happen when the `drain` command times out.
 
 Without the `--force-upgrade` flag, the Kubernetes nodes that have under replicated pods wouldn't be upgraded.
 
@@ -1424,24 +1294,105 @@ Check the version of Kubernetes:
 kubectl get nodes
 
 NAME                                         STATUS   ROLES    AGE   VERSION
-ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
-ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.2
-ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
-ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
-ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.2
-ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.2
-ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.2
+ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
+ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
+ip-10-0-129-33.us-west-2.compute.internal    Ready    <none>   36m   v1.15.3
+ip-10-0-130-39.us-west-2.compute.internal    Ready    <none>   80m   v1.15.3
+ip-10-0-131-155.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
+ip-10-0-131-252.us-west-2.compute.internal   Ready    <none>   80m   v1.15.3
+ip-10-0-194-48.us-west-2.compute.internal    Ready    master   82m   v1.15.3
+ip-10-0-194-91.us-west-2.compute.internal    Ready    master   81m   v1.15.3
+ip-10-0-195-21.us-west-2.compute.internal    Ready    master   82m   v1.15.3
 ```
 
-Check that the Redis and the http-echo apps are still accessible
+Check that the `Jenkins` and the `ebs-dynamic-app` apps are still accessible.
+
+The `Redis` and the `http-echo` apps aren't running anymore as they haven't been deployed using a `deployment`.
+
+## Appendix 1. Setting up an external identity provider
+
+Your Konvoy cluster contains a Dex instance which serves as an identity broker and allows you to integrate with Google's OAuth.
+
+Google's OAuth 2.0 APIs can be used for both authentication and authorization.
+
+Go to [Google’s developer console](https://console.developers.google.com/) and create a project.
+
+Select that project.
+
+In the Credentials tab of that project start with setting up the OAuth consent screen.
+
+Indicate an `Application name` and add the DNS name via which your Konvoy cluster is publicly reachable (`<public-cluster-dns-name>`) into `Authorized domains`.
+
+Save the OAuth consent screen configuration.
+
+Press Create credentials, select OAuth client ID, and then Web application.
+
+Under Authorized redirect URIs insert `https://<public-cluster-dns-name>/dex/callback`.
+
+![google-idp-application](images/google-idp-application.png)
+
+Don't forget to hit ENTER when setting up oauth in the google console for the redirect url and other fields, otherwise the values are not saved if you just hit the save button.
+
+Save the configuration and note down the client ID and the client secret.
+
+![google-idp-credentials](images/google-idp-credentials.png)
+
+Run the following command (after inserting your email address) to provide admin rights to your Google account:
 
 ```bash
-telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+cat <<EOF | kubectl create -f -
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: admin-binding
+subjects:
+- kind: User
+  name: <your Google email>
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
+EOF
 ```
 
-```bash
-curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+
+Edit the `cluster.yaml` file and update the `dex` section as below:
+
 ```
+    - name: dex
+      enabled: true
+      values: |
+        config:
+          connectors:
+          - type: oidc
+            id: google
+            name: Google Accounts
+            config:
+              issuer: https://accounts.google.com
+              clientID: <client ID>
+              clientSecret: <client secret>
+              redirectURI: https://<public-cluster-dns-name>/dex/callback
+              userIDKey: email
+              userNameKey: email
+```
+
+And run `konvoy up --yes` again to apply the change.
+
+When the update is finished, Go to `https://<public-cluster-dns-name>/token` and login with your Google Account.
+
+![google-idp-token](images/google-idp-token.png)
+
+Follow the instructions in the page, but use the command below in the second step to get the right value for the `server` parameter:
+
+```bash
+kubectl config set-cluster kubernetes-cluster \
+    --certificate-authority=${HOME}/.kube/certs/kubernetes-cluster/k8s-ca.crt \
+    --server=$(kubectl config view | grep server | awk '{ print $2 }')
+```
+
+Run the following command to check that you can administer the Kubernetes cluster with your Google account:
+
+```bash
+kubectl get nodes
+```
+
