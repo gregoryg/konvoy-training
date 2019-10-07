@@ -56,10 +56,10 @@ main features.
 ** Workstation or Laptop requirements
 You need either a Linux, MacOS or a Windows laptop.
 
-  For Windows, please use the
+  You may choose to use the
   [[https://console.cloud.google.com/cloudshell][Google Cloud Shell]].
 
-** Software
+** Software on laptop
 *** Docker
 If you use your laptop, you need to have Docker installed.
 
@@ -139,7 +139,7 @@ The output should be something similar to
 
 *IMPORTANT*: If you don't finish the deployment on time, the instructor will provide
 an updated token.
-*** SSH Agent must be working
+*** SSH Agent must be working                                      :noexport:
     #+begin_src sh
     ssh-add -l
     #+end_src
@@ -165,7 +165,7 @@ an updated token.
     #+begin_src sh
     ssh-keygen
     #+end_src
-*** =kubectl= 
+*** =kubectl=                                                      :noexport:
     For any OS, visit [[https://kubernetes.io/docs/tasks/tools/install-kubectl/][Install and Set Up kubectl]] on kubernetes.io
 
 **** After installation
@@ -174,11 +174,31 @@ an updated token.
      kubectl version
      #+end_src
 
-*** Helm
+*** Helm                                                           :noexport:
     To install Helm, visit [[https://github.com/helm/helm/releases/tag/v2.14.3][Helm release page]] and download the =helm= executable for your OS
-*** wget/curl
+*** wget/curl                                                      :noexport:
 
-** Install Konvoy
+** Jump Servers
+
+Jumpservers have been deployed for each lab participant with all prerequisites
+installed. First, go to the participant data spreadsheet and select a host by
+entering your name.  Then, download the ssh-private-key (id_rsa_student#) and
+change the file permissions.  Finally, ssh to the ipaddress of your assigned
+jumpserver using the -i option to specify the identity file to be used.  The
+username for the Jumpserver is "centos".
+
+Once you download your SSH key, change the permission on the key
+#+begin_src bash
+chmod 400 id_rsa_student#
+#+end_src
+
+Test your SSH key and access to your jump server
+#+begin_src bash
+ssh -i id_rsa_student# centos@jumpserver-ip-address
+#+end_src
+
+
+** Install Konvoy                                                  :noexport:
 Clone the GitHub repository and run the following commands to uncompress
 the Konvoy binaries:
 
@@ -2021,3 +2041,5 @@ To update =Ingress=, we can use the command below.
 # LocalWords:  ClusterRoleBinding roleRef ClusterRole apiGroup clientSecret kube
 # LocalWords:  redirectURI userIDKey userNameKey config vpc Preflights ReplicaSet
 # LocalWords:  StatefulSet PathPrefixStrip namespace
+
+* Appendix 1: Setting up an external identity provider
