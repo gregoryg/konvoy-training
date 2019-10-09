@@ -197,6 +197,22 @@ Test your SSH key and access to your jump server
 ssh -i id_rsa_student# centos@jumpserver-ip-address
 #+end_src
 
+For Windows, you can use the [Google Cloud Shell](https://console.cloud.google.com/cloudshell).
+Once your Google Cloud Shell has started, you will have to copy the contents of you id_rsa_student#.pem file to a local file in the cloud shell.  Then change the permission on the file and ssh into the jump host.
+
+
+
+#+BEGIN_SRC sh
+
+vi id_rsa_student#
+#+END_SRC
+#+BEGIN_SRC sh
+chmod 400 id_rsa_student#
+#+END_SRC
+
+#+BEGIN_SRC sh
+ssh -i id_rsa_student# centos@jumpserver-ip-address
+#+END_SRC
 
 ** Install Konvoy                                                  :noexport:
 Clone the GitHub repository and run the following commands to uncompress
@@ -272,63 +288,22 @@ deployment model that suits the scale that you need as your business grows is
 important.
 
 ** Lab Steps
-Execute the following command to create a =cluster.yaml= template file:
+Change directories into the lab directory:
 
 #+begin_src sh
-  ./konvoy init
+cd ~/lab
 #+end_src
-
-Expected output:
-#+begin_example
-Created configuration file successfully!
-#+end_example
-
-Edit the newly created =cluster.yaml= file to add the =owner= and =expiration=
-tags and update the number of workers as shown below:
-
-#+begin_src yaml
-  spec:
-    provider: aws
-    aws:
-      region: us-west-2
-      availabilityZones:
-      - us-west-2c
-      tags:
-        owner: <YOUREMAIL>
-        purpose: konvoy-training
-        expiration: 12h
-        nodePools:
-        - name: worker
-          count: 5
-#+end_src
-
-Change the Kubernetes version from =1.15.2= to =1.15.1= in the 2 corresponding
-fields:
-
-#+begin_src yaml
-  ...
-  spec:
-    kubernetes:
-      version: 1.15.1
-  ...
-    addons:
-      configVersion: stable-1.15.1-0
-  ...
-#+end_src
-
-A tag is useful to track the AWS instances related to your Konvoy cluster (for
-example).
 
 Deploy your cluster using the command below:
 
 #+begin_src sh
-  ./konvoy up --yes
+konvoy up --yes
 #+end_src
 
 The output should be similar to:
 
 #+begin_example
-  ./konvoy up --yes                                                                  
+  konvoy up --yes                                                                  
   This process will take about 15 minutes to complete (additional time may be required for larger clusters), do you want to continue [y/n]: y
 
   STAGE [Provisioning Infrastructure]
@@ -379,17 +354,19 @@ with network connectivity issues), then, you can run the following
 command to redeploy them:
 
 #+begin_src sh
-  ./konvoy deploy addons --yes
+  konvoy deploy addons --yes
 #+end_src
 
-As soon as your cluster is successfully deployed, the URL and the
-credentials to access your cluster are displayed.
+As soon as your cluster is successfully deployed, the URL and the credentials to
+access your cluster are displayed.  When you lauch your dashboard URL in your
+browser the first screen will ask you to select "login or generate token",
+select login and use the credentials provided.
 
 If you need to get this information later, you can execute the command
 below:
 
 #+begin_src sh
-  ./konvoy get ops-portal
+  konvoy get ops-portal
 #+end_src
 
 #+CAPTION: Konvoy UI
@@ -405,25 +382,25 @@ following command:
 
 #+begin_example
   mv ~/.kube/config ~/.kube/config.old
-  ./konvoy apply kubeconfig
+  konvoy apply kubeconfig -force-overwrite
 #+end_example
 
 You can check that the Kubernetes cluster has been deployed with 3 control nodes
-and 3 worker nodes
+and 5 worker nodes
 
 #+begin_src sh
   kubectl get nodes
 #+end_src
 #+begin_example
-  NAME                                         STATUS   ROLES    AGE   VERSION
-  ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-  ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.1
-  ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-  ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-  ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.1
-  ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.1
-  ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.1
-  ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.1
+NAME                                         STATUS   ROLES    AGE   VERSION
+ip-10-0-128-64.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-129-247.us-west-2.compute.internal   Ready    <none>   10m   v1.15.2
+ip-10-0-129-41.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-129-88.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-130-84.us-west-2.compute.internal    Ready    <none>   10m   v1.15.2
+ip-10-0-193-118.us-west-2.compute.internal   Ready    master   11m   v1.15.2
+ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.2
+ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 #+end_example
 
 
@@ -458,51 +435,51 @@ Deploy a Redis pod on your Kubernetes cluster by running the following
 command:
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  apiVersion: v1
-  kind: Pod
-  metadata:
-    labels:
-      app: Redis
-    name: Redis
-  spec:
-    containers:
-    - name: Redis
-      image: Redis:5.0.3
-      ports:
-      - name: Redis
-        containerPort: 6379
-        protocol: TCP
-  EOF
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  containers:
+  - name: redis
+    image: redis:5.0.3
+    ports:
+    - name: redis
+      containerPort: 6379
+      protocol: TCP
+EOF
 #+end_src
 
 Then, expose the service, you need to run the following command to
 create a Service Type Load Balancer:
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  apiVersion: v1
-  kind: Service
-  metadata:
-    labels:
-      app: Redis
-    name: Redis
-  spec:
-    type: LoadBalancer
-    selector:
-      app: Redis
-    ports:
-    - protocol: TCP
-      port: 6379
-      targetPort: 6379
-  EOF
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: redis
+  name: redis
+spec:
+  type: LoadBalancer
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+EOF
 #+end_src
 
 Finally, run the following command to see the URL of the Load Balancer
 created on AWS for this service:
 
 #+begin_src sh
-  kubectl get svc Redis
+kubectl get svc redis
 #+end_src
 #+begin_example
   NAME    TYPE           CLUSTER-IP   EXTERNAL-IP                                                               PORT(S)          AGE
@@ -513,10 +490,10 @@ You need to wait for a few minutes while the Load Balancer is created on
 AWS and the name resolution in place.
 
 #+begin_src sh
-  until nslookup $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-  do
+until nslookup $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+do
     sleep 1
-  done
+done
 #+end_src
 
 Expected output:
@@ -540,7 +517,7 @@ You can validate that you can access the Redis pod from your laptop
 using telnet:
 
 #+begin_src sh
-  telnet $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+telnet $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
 #+end_src
 #+begin_example
   Trying 52.27.218.48...
@@ -557,8 +534,8 @@ If you don't have =telnet= installed in your machine, you can use =nc=
 instead:
 
 #+begin_src sh
-  sudo apt install netcat
-  nc -z $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
+sudo apt install netcat
+nc -z $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
 #+end_src
 * 3. Expose a Kubernetes Application using an Ingress (L7)
   :PROPERTIES:
@@ -581,30 +558,30 @@ commands:
   kubectl expose pod http-echo-2 --port 80 --target-port 80 --type NodePort --name "http-echo-2"
 #+end_src
 
-Finally create the Ingress to expose the application to the outside
+Create the Ingress to expose the application to the outside
 world using the following command:
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  apiVersion: extensions/v1beta1
-  kind: Ingress
-  metadata:
-    name: echo
-  spec:
-    rules:
-    - host: "http-echo-1.com"
-      http:
-        paths:
-        - backend:
-            serviceName: http-echo-1
-            servicePort: 80
-    - host: "http-echo-2.com"
-      http:
-        paths:
-        - backend:
-            serviceName: http-echo-2
-            servicePort: 80
-  EOF
+cat <<EOF | kubectl create -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo
+spec:
+  rules:
+  - host: "http-echo-1.com"
+    http:
+      paths:
+      - backend:
+          serviceName: http-echo-1
+          servicePort: 80
+  - host: "http-echo-2.com"
+    http:
+      paths:
+      - backend:
+          serviceName: http-echo-2
+          servicePort: 80
+EOF
 #+end_src
 
 Go to the Traefik UI to check that new frontends have been created.
@@ -616,18 +593,19 @@ Finally, run the following command to see the URL of the Load Balancer
 created on AWS for the Traefik service:
 
 #+begin_src sh
-  kubectl get svc traefik-kubeaddons -n kubeaddons
-
+kubectl get svc traefik-kubeaddons -n kubeaddons
+#+end_src
+#+BEGIN_EXAMPLE
   NAME                 TYPE           CLUSTER-IP    EXTERNAL-IP                                                             PORT(S)                                     AGE
   traefik-kubeaddons   LoadBalancer   10.0.24.215   abf2e5bda6ca811e982140acb7ee21b7-37522315.us-west-2.elb.amazonaws.com   80:31169/TCP,443:32297/TCP,8080:31923/TCP   4h22m
-#+end_src
+#+END_EXAMPLE
 
-You can validate that you can access the web application pods from your
-laptop using the following commands:
+
+You can validate that you can access the web application pods from your laptop using the following commands:
 
 #+begin_src sh
-  curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-  curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 #+end_src
 
 You can also set some Traefik annotations to use some advanced features
@@ -664,91 +642,93 @@ network policies without any additional configuration.
    :END:
 
 In many cases, you want to restrict communications between services. For
-example, you often want some micro services to be reachable only other
-specific micro services.
+example, you often want some micro services to be reachable only other specific
+micro services.
 
-In this lab, we restrict access to ingresses, so you may think that it's
-useless as we can simply not expose these apps if we want to restrict
-access. But, in fact, it makes sense to also create network policies to
-avoid cases where an app is exposed by mistake.
+In this lab, we restrict access to ingresses, so you may think that it's useless
+as we can simply not expose these apps if we want to restrict access. But, in
+fact, it makes sense to also create network policies to avoid cases where an app
+is exposed by mistake.
 
 ** Lab Steps
 Create a network policy to deny any ingress
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  apiVersion: networking.k8s.io/v1
-  kind: NetworkPolicy
-  metadata:
-    name: default-deny
-  spec:
-    podSelector: {}
-    policyTypes:
-    - Ingress
-  EOF
+cat <<EOF | kubectl create -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+EOF
 #+end_src
 
 Wait for a minute to allow the network policy to be activated and check
 that the Redis and the http-echo apps aren't accessible anymore
 
 #+begin_src sh
-  telnet $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
 #+end_src
 
 #+begin_src sh
-  curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-  curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
+curl -k -H "Host: http-echo-2.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
 #+end_src
 
 Create network policies to allow ingress access to these apps only
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  kind: NetworkPolicy
-  apiVersion: networking.k8s.io/v1
-  metadata:
-    name: access-Redis
-  spec:
-    podSelector:
-      matchLabels:
-        app: Redis
-    ingress:
-    - from: []
-  EOF
+cat <<EOF | kubectl create -f -
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: access-redis
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  ingress:
+  - from: []
+EOF
 
-  cat <<EOF | kubectl create -f -
-  kind: NetworkPolicy
-  apiVersion: networking.k8s.io/v1
-  metadata:
-    name: access-http-echo-1
-  spec:
-    podSelector:
-      matchLabels:
-        app: http-echo-1
-    ingress:
-    - from: []
-  EOF
+cat <<EOF | kubectl create -f -
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: access-http-echo-1
+spec:
+  podSelector:
+    matchLabels:
+      app: http-echo-1
+  ingress:
+  - from: []
+EOF
 
-  cat <<EOF | kubectl create -f -
-  kind: NetworkPolicy
-  apiVersion: networking.k8s.io/v1
-  metadata:
-    name: access-http-echo-2
-  spec:
-    podSelector:
-      matchLabels:
-        app: http-echo-2
-    ingress:
-    - from: []
-  EOF
+cat <<EOF | kubectl create -f -
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: access-http-echo-2
+spec:
+  podSelector:
+    matchLabels:
+      app: http-echo-2
+  ingress:
+  - from: []
+EOF
 #+end_src
 
 Wait for a minute and check that the Redis and the http-echo apps are
 now accessible
 
 #+begin_src sh
-  telnet $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
 #+end_src
+
+#+RESULTS:
 
 #+begin_src sh
   curl -k -H "Host: http-echo-1.com" https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath={.status.loadBalancer.ingress[*].hostname})
@@ -758,16 +738,16 @@ now accessible
 Delete the network policy that denies any ingress
 
 #+begin_src sh
-  cat <<EOF | kubectl delete -f -
-  apiVersion: networking.k8s.io/v1
-  kind: NetworkPolicy
-  metadata:
-    name: default-deny
-  spec:
-    podSelector: {}
-    policyTypes:
-    - Ingress
-  EOF
+cat <<EOF | kubectl delete -f -
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+EOF
 #+end_src
 
 * 5. Leverage persistent storage using CSI
@@ -804,12 +784,14 @@ clusters as they mature. Choosing a solution that supports CSI
 integration will allow your business to adopt the latest and greatest
 storage solutions with ease.
 
-** Lab Steps When Konvoy is deployed on AWS, a =StorageClass= is created
+** Lab Steps 
+
+When Konvoy is deployed on AWS, a =StorageClass= is created
 automatically as you can see below.  Note the =WaitForFirstConsumer= value for
 the volume binding mode parameter
 
 #+begin_src sh
-  kubectl get sc awsebscsiprovisioner -o yaml
+kubectl get sc awsebscsiprovisioner -o yaml
 #+end_src
 
 #+begin_example
@@ -834,26 +816,26 @@ the volume binding mode parameter
 Create the Kubernetes PersistentVolumeClaim using the following command:
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  apiVersion: v1
-  kind: PersistentVolumeClaim
-  metadata:
-    name: dynamic
-  spec:
-    accessModes:
-      - ReadWriteOnce
-    storageClassName: awsebscsiprovisioner
-    resources:
-      requests:
-        storage: 1Gi
-  EOF
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: dynamic
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: awsebscsiprovisioner
+  resources:
+    requests:
+      storage: 1Gi
+EOF
 #+end_src
 
 Run the following command to check the status of the
 =PersistentVolumeClaim=:
 
 #+begin_src sh
-  kubectl describe pvc dynamic
+kubectl describe pvc dynamic
 #+end_src
 
 #+begin_example
@@ -883,57 +865,57 @@ Create a Kubernetes Deployment that will use this
 =PersistentVolumeClaim= using the following command:
 
 #+begin_src sh
-  cat <<EOF | kubectl create -f -
-  apiVersion: apps/v1
-  kind: Deployment
-  metadata:
-    name: ebs-dynamic-app
-    labels:
+cat <<EOF | kubectl create -f -
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ebs-dynamic-app
+  labels:
+    app: ebs-dynamic-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
       app: ebs-dynamic-app
-  spec:
-    replicas: 1
-    selector:
-      matchLabels:
+  template:
+    metadata:
+      labels:
         app: ebs-dynamic-app
-    template:
-      metadata:
-        labels:
-          app: ebs-dynamic-app
-      spec:
-        containers:
-        - name: ebs-dynamic-app
-          image: centos:7
-          command: ["/bin/sh"]
-          args: ["-c", "while true; do echo \$(date -u) >> /data/out.txt; sleep 5; done"]
-          volumeMounts:
-          - name: persistent-storage
-            mountPath: /data
-        volumes:
+    spec:
+      containers:
+      - name: ebs-dynamic-app
+        image: centos:7
+        command: ["/bin/sh"]
+        args: ["-c", "while true; do echo \$(date -u) >> /data/out.txt; sleep 5; done"]
+        volumeMounts:
         - name: persistent-storage
-          persistentVolumeClaim:
-            claimName: dynamic
-  EOF
+          mountPath: /data
+      volumes:
+      - name: persistent-storage
+        persistentVolumeClaim:
+          claimName: dynamic
+EOF
 #+end_src
 
 Run the following command until the pod is running:
 
 #+begin_src sh
-  kubectl get pods
+kubectl get pods
 #+end_src
 
 Check the content of the file =/data/out.txt= and note the first
 timestamp:
 
 #+begin_src sh
-  pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
-  kubectl exec -i $pod cat /data/out.txt
+pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
+kubectl exec -i $pod cat /data/out.txt
 #+end_src
 
 Delete the pod using the following command (it will take some time to
 complete):
 
 #+begin_src sh
-  kubectl delete pod $pod
+kubectl delete pod $pod
 #+end_src
 
 The Deployment will recreate the pod automatically.
@@ -941,15 +923,15 @@ The Deployment will recreate the pod automatically.
 Run the following command until the pod is running:
 
 #+begin_src sh
-  kubectl get pods
+kubectl get pods
 #+end_src
 
 Check the content of the file =/data/out.txt= and verify that the first
 timestamp is the same as the one noted previously:
 
 #+begin_src sh
-  pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
-  kubectl exec -i $pod cat /data/out.txt
+pod=$(kubectl get pods | grep ebs-dynamic-app | awk '{ print $1 }')
+kubectl exec -i $pod cat /data/out.txt
 #+end_src
 
 * 6. Deploy Jenkins using Helm
@@ -1057,7 +1039,7 @@ Open http://a3b2b652ab4354e7f8eded17d4323afb-1148896961.us-west-2.elb.amazonaws.
 #+end_example
 
 
-Go to the corresponding URL to access the Gitlab.
+Go to the corresponding URL to access Jenkins
 
 Login with the user =admin= and the password =password=.
 
@@ -1094,7 +1076,7 @@ for conditional logic and other orchestration requirements.
 
 
 ** Lab Steps
-*** Download or clone the KUDO Operators we will use
+*** Download or clone the KUDO Operators we will use               :noexport:
 We will need to have the KUDO operators in order to install ZooKeeper and
 Kafka.  
 
@@ -1109,12 +1091,10 @@ download" button and selecting "Download ZIP"
 
 *** Install KUDO on the Konvoy cluster
 
-Run the following commands to deploy KUDO on your Kubernetes cluster:
+Run the following command to deploy KUDO on your Kubernetes cluster:
 
 #+begin_src sh
-  kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/00-prereqs.yaml
-  kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/10-crds.yaml
-  kubectl create -f https://raw.githubusercontent.com/kudobuilder/kudo/v0.5.0/docs/deployment/20-deployment.yaml
+kubectl kudo init
 #+end_src
 
 Check the status of the KUDO controller:
