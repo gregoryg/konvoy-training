@@ -13,7 +13,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-#+SETUPFILE: ~/projects/org-html-themes/setup/theme-bigblow.setup
+#+SETUPFILE: /Users/gregj/projects/org-html-themes/setup/theme-bigblow.setup
 # #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 * Introduction
   :PROPERTIES:
@@ -653,7 +653,7 @@ is exposed by mistake.
 ** Lab Steps
 Create a network policy to deny any ingress
 
-#+begin_src sh
+#+begin_src sh :session konvoy-sh
 cat <<EOF | kubectl create -f -
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
@@ -665,6 +665,8 @@ spec:
   - Ingress
 EOF
 #+end_src
+
+#+RESULTS:
 
 Wait for a minute to allow the network policy to be activated and check
 that the Redis and the http-echo apps aren't accessible anymore
@@ -1108,7 +1110,7 @@ Check the status of the KUDO controller:
   kudo-controller-manager-0   1/1     Running   0          84s
 #+end_example
 
-*** Install the KUDO CLI
+*** Install the KUDO CLI                                           :noexport:
     KUDO requires downloading a =kubectl-kudo= command for the command line interface.  
 **** MacOS
 
@@ -1118,8 +1120,8 @@ Check the status of the KUDO controller:
 #+end_src
 **** Linux
 #+begin_src sh
-  wget https://github.com/kudobuilder/kudo/releases/download/v0.5.0/kubectl-kudo_0.5.0_linux_x86_64
-  sudo mv kubectl-kudo_0.5.0_linux_x86_64 /usr/bin/kubectl-kudo
+  wget https://github.com/kudobuilder/kudo/releases/download/v0.7.2/kubectl-kudo_0.7.2_linux_x86_64
+  sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/bin/kubectl-kudo
   chmod +x /usr/bin/kubectl-kudo
 #+end_src
 
@@ -1131,18 +1133,17 @@ Check the status of the KUDO controller:
 
      Expected output from both commands
      #+begin_example
-     KUDO Version: version.Info{GitVersion:"0.5.0", GitCommit:"f9f6aa85", BuildDate:"2019-08-02T15:05:56Z", GoVersion:"go1.12.5", Compiler:"gc", Platform:"linux/amd64"}
+     KUDO Version: version.Info{GitVersion:"0.7.2", GitCommit:"f9f6aa85", BuildDate:"2019-08-02T15:05:56Z", GoVersion:"go1.12.5", Compiler:"gc", Platform:"linux/amd64"}
      #+end_example
 
 *** Deploy ZooKeeper using KUDO
 
+TODO: grab current output of install for example block
+
 We will need the =operators= directory that you downloaded at the beginning of this lab.
 
-Assuming you cloned or unzipped the directory to =/home/myuser/operators=
-
 #+begin_src sh
-  cd /home/myuser/operators/repository/zookeeper/operator
-  kubectl kudo install . --instance=zk
+kubectl kudo install zookeeper --instance=zk
 #+end_src
 #+begin_example
   operator.kudo.k8s.io/v1alpha1/zookeeper created
@@ -1189,7 +1190,7 @@ Assuming you cloned or unzipped the directory to =/home/myuser/operators=
     kubectl kudo install . --instance=kafka --version=0.1.2
 #+end_src
 
-Check the status of the deployment:
+Check the status of the deployment.  This will only show status when deploying, otherwise will report a plan status is not found.
 
 #+begin_src sh
   kubectl kudo plan status --instance=kafka
@@ -1222,7 +1223,7 @@ And check that the corresponding pods are running:
 *** Produce messages in Kafka
     This Deployment will continuously place messages on a Kafka topic
 
-#+begin_src sh :session konvoy-sh
+#+begin_src sh :session konvoy-sh :results none
 cat <<EOF | kubectl create -f -
   apiVersion: apps/v1beta1
   kind: Deployment
@@ -1245,13 +1246,10 @@ cat <<EOF | kubectl create -f -
 EOF
 #+end_src
 
-#+RESULTS:
-|                                                                                  |
-| > > > > > > > > > > > > > > > > > > deployment.apps/kudo-kafka-generator created |
 
 *** Consume messages from Kafka:
 
-#+begin_src sh :session konvoy-sh
+#+begin_src sh :session konvoy-sh :results none
 cat <<EOF | kubectl create -f -
   apiVersion: apps/v1beta1
   kind: Deployment
@@ -1293,7 +1291,7 @@ EOF
 *** Explore KUDO concepts
 KUDO is creating new objects in Kubernetes called Custom Resource Definitions
 (CRDs).  You can get information about these objects like you can get
-information about pods, deployments, ...
+information about pods, deployments, services etc.
 
 Run this command to get the list of CRDs created by KUDO:
 
@@ -1304,7 +1302,6 @@ Run this command to get the list of CRDs created by KUDO:
   instances.kudo.dev                               2019-08-21T09:30:46Z
   operators.kudo.dev                               2019-08-21T09:30:45Z
   operatorversions.kudo.dev                        2019-08-21T09:30:45Z
-  planexecutions.kudo.dev                          2019-08-21T09:30:46Z
 #+end_example
 
 Now list the KUDO instances running using the following command:
@@ -1416,6 +1413,19 @@ And get information about the upgraded KUDO Kafka instance:
     status: COMPLETE
 #+end_example
 
+And check that the corresponding Pods have been replaced:
+
+#+begin_src sh
+kubectl get pods | grep kafka
+#+end_src
+#+begin_example
+kafka-kafka-0                          1/1     Running   0          3m33s
+kafka-kafka-1                          1/1     Running   0          88s
+kafka-kafka-2                          1/1     Running   0          12s
+#+end_example
+
+
+
 You can also easily update the configuration of your Kafka cluster.
 
 For example, you can add more brokers using the command below.
@@ -1469,17 +1479,14 @@ And check that the corresponding pods are running:
 
 Scale the Konvoy cluster to 6 nodes using CD/CD
 
-Update the =~/.aws/credentials= file with the new information provided
-by your instructor.
-
 ** Lab Steps
 
 Edit the =cluster.yaml= file to change the worker count from 5 to 6:
 
   #+begin_src yaml
-    nodePools:
-    - name: worker
-      count: 6
+  nodePools:
+  - name: worker
+    count: 6
   #+end_src
 
 And run =./konvoy up --yes= again.
@@ -1548,6 +1555,8 @@ Run the following command to enable Kafka metrics export:
   kubectl create -f https://raw.githubusercontent.com/kudobuilder/operators/master/repository/kafka/docs/v0.1/resources/service-monitor.yaml
 #+end_src
 
+#+RESULTS:
+
 In the Grafana UI, click on the + sign on the left and select =Import=.
 
 Copy the content of this
@@ -1576,6 +1585,9 @@ In Konvoy, all the logs are stored in an Elasticsearch cluster and
 exposed through Kibana.
 
 ** Lab Steps
+
+In Konvoy, all the logs are stored in Elasticsearch and exposed through Kibana.
+
 To access the Kibana UI, click on the =Kibana Logs= icon on the Konvoy
 UI.
 
@@ -1586,7 +1598,7 @@ By default, it only shows the logs for the latest 15 minutes.
 
 Click on the top right corner and select =Last 24 hours=.
 
-Then, search for =Redis=:
+Then, search for =redis=:
 
 #+CAPTION: Kibana Redis
 [[file:images/kibana-Redis.png]]
@@ -1594,6 +1606,102 @@ Then, search for =Redis=:
 You'll see all the logs related to the Redis pod and Service you
 deployed previously.
 
+*** 10.1. Ingress troubleshooting using logging
+
+In this section, we will leverage Konvoy logging to troubleshoot Ingress failure issue.
+
+We will deploy an NGINX application and expose it via L7 loadbalancer. The application can be accessed with URLs follows below patten.
+
+#+begin_src sh
+http[s]://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/
+#+end_src
+
+
++ 1st, let's deploy a nginx application and scale it to 3
+
+#+begin_src bash
+kubectl run --image=nginx --replicas=3 --port=80 --restart=Always nginx
+#+end_src
++ 2nd, expose a in cluster service
+
+#+begin_src bash
+kubectl expose deploy nginx --port 8080 --target-port 80 --type NodePort --name "svc-nginx"
+#+end_src
++ 3rd, create a ingress to expose service via Layer7 LB
+
+#+begin_src bash
+cat << EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-root
+  namespace: default
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: svc-nginx
+          servicePort: 8080
+        path:  /applications/nginx/
+EOF
+#+end_src
++ 4th, Now check Ingress configure in Traefik
+
+#+caption: Traefik nginx
+file:images/trafik_nginx.png
+
+The =Traefik dashboard= indicates the nginx application is ready to receive traffic but if you try access nginx with URL listed below, you will notice =404 Not Found= error like:
+
+#+begin_src bash
+curl -k https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output jsonpath="{.status.loadBalancer.ingress[*].hostname}")/applications/nginx/
+#+end_src
+
+Don't forget the trailing slash at the end of the URL. Otherwise, you won't generate a 404 error.
+
+#+caption: Traefix nginx
+file:images/trafik_404.png
+
+Let's troubleshoot this failure with Konvoy Kibana.
+
+#+caption: Kibana nginx
+file:images/kibana_nginx.png
+
+With Konvoy Kibana's near real time log collection and indexing, we can easily identify the ingress traffic was eventually handled by a pod =kubernetes.pod_name:nginx-755464dd6c-dnvp9= in nginx service. The log also gave us more information on the failure, ="GET /applications/nginx/ HTTP/1.1" 404=, which tell us that nginx can't find resource at path =/applications/nginx/=.
+
+That is neat! Because w/o Kibana, you wouldn't know which Pod in our nginx service handles this request. (Our nginx deployment example launched 3 Pods to serve HTTP request) Not mention if there are multiple nginx service exists in the same K8s cluster but hosted at different namespace.
+
+To fix this failure requires some knownledge on Nginx configuration. In general, when nginx is launched with default configuration, it serves a virtual directory on its =ROOT= path =(/)=. When receives HTTP requests, the nginx walk through its virtual directory to return back resources to the client.
+
+In terms of out example, the =Ingress= configuration we submitted to k8s was configured to a path at =/applications/nginx/=. The =traefik= ingress controller sees this =Ingress configuration= and forwards any resource request at path =/applications/nginx/= to the down stream nginx service at the same path. The pod =kubernetes.pod_name:nginx-755464dd6c-dnvp9= received this request but nginx instance in this pod failed to locate any resource under path =/applications/nginx/=. That is the reason we saw this failure, ="GET /applications/nginx/ HTTP/1.1" 404=.  
+
+You can, of course, configure nginx instance to serve resources at path =/applications/nginx/=. But an alternative solution is leverage =traefik= to strip PATH =/applications/nginx/= to =ROOT (/)= before route requests to nginx.
+
+According to =Traefik= documentation [PathPrefixStrip](https://docs.traefik.io/configuration/backends/kubernetes/), the annotation =(traefik.ingress.kubernetes.io/rule-type)= is exactly what we need to direct traefik to strip ingress HOST PATH to ROOT PATH forementioned.
+
+To update =Ingress=, we can use below command.
+
+#+begin_src bash
+cat << EOF | kubectl apply -f -
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    traefik.frontend.rule.type: PathPrefixStrip
+  name: nginx-root
+  namespace: default
+spec:
+  rules:
+  - http:
+      paths:
+      - backend:
+          serviceName: svc-nginx
+          servicePort: 8080
+        path:  /applications/nginx/
+EOF
+#+end_src
+#+caption: Dashboard nginx
+file:images/trafik_nginx_200.png
 
 * 11. Setting up an external identity provider
   :PROPERTIES:
