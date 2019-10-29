@@ -5,8 +5,8 @@
 #+options: todo:t |:t
 #+title: Mayadata D2iQ Training Workshop
 #+date: <2019-08-22 Thu>
-#+author: D2iQ SE Team
-#+instructors: Greg Grubbs, Valerian Jone
+#+author: Greg Grubbs, Brian Matheson
+#+instructors: Greg Grubbs, Brian Matheson
 #+slide_header: github.com/mesosphere/konvoy-training
 #+email: ggrubbs@d2iq.com
 #+language: en
