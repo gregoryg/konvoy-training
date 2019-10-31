@@ -13,8 +13,31 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-#+SETUPFILE: ~/projects/org-html-themes/setup/theme-bigblow.setup
+#+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
 # #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+* Proposed joint outline
+** Setup Konvoy and OpenEBS Gregory Grubbs, Brian Matheson
+** Set up the environment with Konvoy and install OpenEBS
+** Greg to intro Konvoy
+** Initialize konvoy and talk through cluster.yaml
+** Brian to intro OpenEBS
+** Talk through stateful services and k8s
+** Modify cluster.yaml to disable stateful apps and bring up initial cluster
+** Install OpenEBS on to the cluster
+** Connect to Director
+** Set up default cstor storage pool
+** Modify cluster.yaml to re-enable stateful apps
+** Back to Greg for Konvoy up 
+** Kubectl get pods -o wide -n openebs
+** Kubectl get sc
+** Set up new storage pool for miniostorage pools
+** Create a different storage pool for additional workloads
+** Deploy simple app
+** Minio
+** Test with some file transfers
+** Monitor simple app 
+** Set an alert threshold on bandwidth utilization
+
 * Introduction
   :PROPERTIES:
   :CUSTOM_ID: introduction
@@ -23,26 +46,6 @@
 
 During this training, you'll learn how to deploy Konvoy and to use its
 main features.
-
-* Table of Contents                                                   :TOC_1:
-
-- [[#introduction][Introduction]]
-- [[#prerequisites][Prerequisites]]
-- [[#deploy-a-konvoy-cluster][1. Deploy a Konvoy cluster]]
-- [[#expose-a-kubernetes-application-using-a-service-type-load-balancer-l4][2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)]]
-- [[#expose-a-kubernetes-application-using-an-ingress-l7][3. Expose a Kubernetes Application using an Ingress (L7)]]
-- [[#leverage-network-policies-to-restrict-access][4. Leverage Network Policies to restrict access]]
-- [[#leverage-persistent-storage-using-csi][5. Leverage persistent storage using CSI]]
-- [[#deploy-jenkins-using-helm][6. Deploy Jenkins using Helm]]
-- [[#deploy-apache-kafka-using-kudo][7. Deploy Apache Kafka using KUDO]]
-- [[#scale-a-konvoy-cluster][8. Scale a Konvoy cluster]]
-- [[#konvoy-monitoring][9. Konvoy monitoring]]
-- [[#konvoy-loggingdebugging][10. Konvoy logging/debugging]]
-- [[#upgrade-a-konvoy-cluster][11. Upgrade a Konvoy cluster]]
-- [[#destroy-a-konvoy-cluster][12. Destroy a Konvoy cluster]]
-- [[#ingress-troubleshooting][13. Bonus Lab: Ingress troubleshooting]]
-- [[#setting-up-an-external-identity-provider][Appendix 1. Setting up an external identity provider]]
-
 
 * Prerequisites
   :PROPERTIES:
