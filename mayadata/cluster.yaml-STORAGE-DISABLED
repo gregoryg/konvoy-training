@@ -1,0 +1,131 @@
+---
+kind: ClusterProvisioner
+apiVersion: konvoy.mesosphere.io/v1alpha1
+metadata:
+  name: konvoy_v1.1.5
+  creationTimestamp: "2019-11-03T15:41:18.699961478Z"
+spec:
+  provider: aws
+  aws:
+    region: us-west-2
+    availabilityZones:
+    - us-west-2c
+    tags:
+      owner: ggrubbs
+      expiration: 24h
+      purpose: konvoy-mayadata-test
+  nodePools:
+  - name: worker
+    count: 4
+    machine:
+      rootVolumeSize: 80
+      rootVolumeType: gp2
+      imagefsVolumeEnabled: true
+      imagefsVolumeSize: 160
+      imagefsVolumeType: gp2
+      type: t3.xlarge
+  - name: control-plane
+    controlPlane: true
+    count: 3
+    machine:
+      rootVolumeSize: 80
+      rootVolumeType: gp2
+      imagefsVolumeEnabled: true
+      imagefsVolumeSize: 160
+      imagefsVolumeType: gp2
+      type: t3.large
+  - name: bastion
+    bastion: true
+    count: 0
+    machine:
+      rootVolumeSize: 10
+      rootVolumeType: gp2
+      type: t3.small
+  sshCredentials:
+    user: centos
+    publicKeyFile: konvoy_v1.1.5-ssh.pub
+    privateKeyFile: konvoy_v1.1.5-ssh.pem
+  version: v1.1.5
+
+---
+kind: ClusterConfiguration
+apiVersion: konvoy.mesosphere.io/v1alpha1
+metadata:
+  name: konvoy_v1.1.5
+  creationTimestamp: "2019-11-03T15:41:16.29040841Z"
+spec:
+  kubernetes:
+    version: 1.15.3
+    controlPlane:
+      controlPlaneEndpointOverride: ""
+      certificate: {}
+      keepalived:
+        enabled: false
+    networking:
+      podSubnet: 192.168.0.0/16
+      serviceSubnet: 10.0.0.0/18
+      httpProxy: ""
+      httpsProxy: ""
+    cloudProvider:
+      provider: aws
+    admissionPlugins:
+      enabled:
+      - NodeRestriction
+      - AlwaysPullImages
+      disabled: []
+    preflightChecks:
+      errorsToIgnore: []
+  containerNetworking:
+    calico:
+      version: v3.8.0
+  containerRuntime:
+    containerd:
+      version: 1.2.6
+      configData:
+        data: ""
+        replace: false
+  packageRepository:
+    defaultRepositoryInstallationDisabled: false
+  nodePools:
+  - name: worker
+  addons:
+    configVersion: stable-1.15.3-1
+    addonsList:
+    - name: awsebscsiprovisioner
+      enabled: false
+    - name: awsebsprovisioner
+      enabled: false
+    - name: dashboard
+      enabled: true
+    - name: dex
+      enabled: true
+    - name: dex-k8s-authenticator
+      enabled: true
+    - name: elasticsearch
+      enabled: false
+    - name: elasticsearchexporter
+      enabled: false
+    - name: fluentbit
+      enabled: false
+    - name: helm
+      enabled: true
+    - name: kibana
+      enabled: false
+    - name: kommander
+      enabled: true
+    - name: localvolumeprovisioner
+      enabled: false
+    - name: opsportal
+      enabled: true
+    - name: prometheus
+      enabled: false
+    - name: prometheusadapter
+      enabled: false
+    - name: traefik
+      enabled: true
+    - name: traefik-forward-auth
+      enabled: true
+    - name: velero
+      enabled: false
+  version: v1.1.5
+

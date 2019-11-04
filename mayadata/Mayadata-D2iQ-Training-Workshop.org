@@ -3,18 +3,41 @@
 #+options: c:nil creator:nil d:t date:t e:t email:nil f:t inline:t num:nil
 #+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:1
 #+options: todo:t |:t
-#+title: Konvoy Training Workshop
+#+title: Mayadata D2iQ Training Workshop
 #+date: <2019-08-22 Thu>
-#+author: D2iQ SE Team
-#+instructors: Greg Grubbs, Valerian Jone
+#+author: Greg Grubbs, Brian Matheson
+#+instructors: Greg Grubbs, Brian Matheson
 #+slide_header: github.com/mesosphere/konvoy-training
 #+email: ggrubbs@d2iq.com
 #+language: en
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-#+SETUPFILE: ~/projects/org-html-themes/setup/theme-bigblow.setup
+#+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
 # #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+* Proposed joint outline
+** Setup Konvoy and OpenEBS Gregory Grubbs, Brian Matheson
+** Set up the environment with Konvoy and install OpenEBS
+** Greg to intro Konvoy
+** Initialize konvoy and talk through cluster.yaml
+** Brian to intro OpenEBS
+** Talk through stateful services and k8s
+** Modify cluster.yaml to disable stateful apps and bring up initial cluster
+** Install OpenEBS on to the cluster
+** Connect to Director
+** Set up default cstor storage pool
+** Modify cluster.yaml to re-enable stateful apps
+** Back to Greg for Konvoy up 
+** Kubectl get pods -o wide -n openebs
+** Kubectl get sc
+** Set up new storage pool for miniostorage pools
+** Create a different storage pool for additional workloads
+** Deploy simple app
+** Minio
+** Test with some file transfers
+** Monitor simple app 
+** Set an alert threshold on bandwidth utilization
+
 * Introduction
   :PROPERTIES:
   :CUSTOM_ID: introduction
@@ -23,26 +46,6 @@
 
 During this training, you'll learn how to deploy Konvoy and to use its
 main features.
-
-* Table of Contents                                                   :TOC_1:
-
-- [[#introduction][Introduction]]
-- [[#prerequisites][Prerequisites]]
-- [[#deploy-a-konvoy-cluster][1. Deploy a Konvoy cluster]]
-- [[#expose-a-kubernetes-application-using-a-service-type-load-balancer-l4][2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)]]
-- [[#expose-a-kubernetes-application-using-an-ingress-l7][3. Expose a Kubernetes Application using an Ingress (L7)]]
-- [[#leverage-network-policies-to-restrict-access][4. Leverage Network Policies to restrict access]]
-- [[#leverage-persistent-storage-using-csi][5. Leverage persistent storage using CSI]]
-- [[#deploy-jenkins-using-helm][6. Deploy Jenkins using Helm]]
-- [[#deploy-apache-kafka-using-kudo][7. Deploy Apache Kafka using KUDO]]
-- [[#scale-a-konvoy-cluster][8. Scale a Konvoy cluster]]
-- [[#konvoy-monitoring][9. Konvoy monitoring]]
-- [[#konvoy-loggingdebugging][10. Konvoy logging/debugging]]
-- [[#upgrade-a-konvoy-cluster][11. Upgrade a Konvoy cluster]]
-- [[#destroy-a-konvoy-cluster][12. Destroy a Konvoy cluster]]
-- [[#ingress-troubleshooting][13. Bonus Lab: Ingress troubleshooting]]
-- [[#setting-up-an-external-identity-provider][Appendix 1. Setting up an external identity provider]]
-
 
 * Prerequisites
   :PROPERTIES:
@@ -262,7 +265,7 @@ Flags:
 Use "konvoy [command] --help" for more information about a command.
 #+end_example
 
-* 1. Deploy a Konvoy cluster
+* 1. Deploy a Konvoy Kubernetes cluster without Storage Options
   :PROPERTIES:
   :CUSTOM_ID: deploy-a-konvoy-cluster
   :END:
@@ -404,7 +407,148 @@ ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.2
 ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 #+end_example
 
+* Install OpenEBS and make it the default storage for the cluster
+** Install storage provider
+#+begin_src sh :session konvoy-sh
+CLUSTER=$(cd state; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
+REGION=us-west-2
+KEY_FILE=$(realpath *.pem | head -1) # path to private key file in folder where you ran konvoy -up
 
+
+# IPS=$(aws --region=$REGION ec2 describe-instances |  jq --raw-output ".Reservations[].Instances[] | select((.Tags | length) > 0) | select(.Tags[].Value | test(\"$CLUSTER-worker\")) | select(.State.Name | test(\"running\")) | [.PublicIpAddress] | join(\" \")")
+IPS=$(aws --region=$REGION ec2 describe-instances --filters Name=tag:konvoy/nodeRoles,Values=worker,Name=tag:konvoy/clusterName,Values=${CLUSTER} | jq -r '.Reservations[].Instances[].PublicIpAddress')
+for ip in $IPS; do
+  echo $ip
+  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo yum install iscsi-initiator-utils -y
+  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo systemctl enable iscsid
+  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo systemctl start iscsid
+  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip cat /etc/iscsi/initiatorname.iscsi
+done
+#+end_src
+
+#+RESULTS:
+
+** Attach additional disk to worker nodes for OpenEBS
+#+begin_src sh :session konvoy-sh :results none
+export CLUSTER=(cd state ; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
+export REGION=us-west-2
+export DISK_SIZE=150
+
+
+aws --region=$REGION ec2 describe-instances |  jq --raw-output ".Reservations[].Instances[] | select((.Tags | length) > 0) | select(.Tags[].Value | test(\"$CLUSTER-worker\")) | select(.State.Name | test(\"running\")) | [.InstanceId, .Placement.AvailabilityZone] | \"\(.[0]) \(.[1])\"" | while read instance zone; do
+  echo $instance $zone
+  volume=$(aws --region=$REGION ec2 create-volume --size=$DISK_SIZE --volume-type gp2 --availability-zone=$zone --tag-specifications="ResourceType=volume,Tags=[{Key=string,Value=$CLUSTER}, {Key=owner,Value=michaelbeisiegel}]" | jq --raw-output .VolumeId)
+  sleep 10
+  aws --region=$REGION ec2 attach-volume --device=/dev/xvdc --instance-id=$instance --volume-id=$volume
+done
+#+end_src
+
+** Install the storage provider operator
+#+begin_src sh :session konvoy-sh :results none
+curl -O https://openebs.github.io/charts/openebs-operator-1.0.0.yaml
+#+end_src
+Note: The devices that the worker nodes have attached from the Konvoy install,
+here /dev/nvme0n1,/dev/nvme1n1, maybe different in your case. You can find out
+the device names by ssh’ing into one of the worker nodes and using the =lsblk=
+command.
+
+We will use a pre-edited operator yaml file that excludes the disk devices used
+in our AWS instances
+#+begin_src sh :session konvoy-sh :results none
+sed 's!exclude: \(.\+/dev/md\)!exclude: \1,/dev/nvme0n1,/dev/nvme1n1,/dev/nvme2n1,/dev/nvme3n1,/dev/nvme4n1,/dev/nvme5n1,/dev/nvme6n1!' ./openebs-operator-1.0.0.yaml > EDITED-openebs-operator-1.0.0.yaml
+kubectl apply -f EDITED-openebs-operator-1.0.0.yaml
+#+end_src
+
+** Create OpenEBS cstor storage pools
+#+begin_src sh :session konvoy-sh :results none
+blkdevices=$(kubectl get blockdevices -n openebs|egrep -v '^NAME'|cut -d' ' -f1)
+#+end_src
+
+#+begin_src sh
+cat <<EOF | zkubectl apply -f -
+kind: StoragePoolClaim
+apiVersion: openebs.io/v1alpha1
+metadata:
+  name: cstor-disk-pool
+  annotations:
+    cas.openebs.io/config: |
+      - name: PoolResourceRequests
+        value: |-
+            memory: 2Gi
+      - name: PoolResourceLimits
+        value: |-
+            memory: 4Gi
+spec:
+  name: cstor-disk-pool
+  type: disk
+  poolSpec:
+    poolType: striped
+  blockDevices:
+    blockDeviceList:
+$(echo $blkdevices | sed 's,\([a-z0-9-]\+\),\n      - \1,g')
+EOF
+#+end_src
+
+** Create a default storage class
+In this step, we create a storage class named =openebs-cstor-default=. This
+storage class will use the storage pool created out of blockdevices we have
+specified with an additional annotation that makes it the default storage class
+for the konvoy cluster.
+#+begin_src sh :session konvoy-sh :results none
+cat <<EOF | kubectl apply -f -
+kind: StorageClass
+apiVersion: storage.k8s.io/v1
+metadata:
+  name: openebs-cstor-default
+  annotations:
+    openebs.io/cas-type: cstor    
+    cas.openebs.io/config: |
+      - name: StoragePoolClaim
+        value: "cstor-disk-pool"
+      - name: ReplicaCount
+        value: "3"
+    storageclass.kubernetes.io/is-default-class: 'true'
+provisioner: openebs.io/provisioner-iscsi
+EOF
+#+end_src
+
+** Verify storage
+#+begin_src sh :session konvoy-sh :results none
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: pvc-test
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: Pod
+apiVersion: v1
+metadata:
+  name: pod-pv-test
+spec:
+  volumes:
+    - name: pv-test
+      persistentVolumeClaim:
+        claimName: pvc-test
+  containers:
+   - name: test
+     image: centos
+     command: ["/bin/sh"]
+     args: ["-c", "while true; do echo \">>> \"$(date) >> /data/output; sleep 10; done"]
+     volumeMounts:
+       - mountPath: "/data"
+         name: pv-test
+EOF
+#+end_src
+
+* Enable all storage add-ons
+Use cluster.yaml-STORAGE-ENABLED
+konvoy up
 * 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
    :PROPERTIES:
    :CUSTOM_ID: expose-a-kubernetes-application-using-a-service-type-load-balancer-l4
