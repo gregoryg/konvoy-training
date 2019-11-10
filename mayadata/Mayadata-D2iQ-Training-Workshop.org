@@ -13,7 +13,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-#+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
+# #+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
 # #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 * Proposed joint outline
 ** Setup Konvoy and OpenEBS Gregory Grubbs, Brian Matheson
@@ -408,45 +408,56 @@ ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 #+end_example
 
 * Install OpenEBS and make it the default storage for the cluster
-** Install storage provider
-#+begin_src sh :session konvoy-sh
-CLUSTER=$(cd state; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
-REGION=us-west-2
-KEY_FILE=$(realpath *.pem | head -1) # path to private key file in folder where you ran konvoy -up
+** Install storage provider (=iscsi=)
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/set-env.sh
+export CLUSTER=$(cd state; jq -r '.modules[].outputs.cluster_name.value' terraform.tfstate)
+# CLUSTER=$(cd state; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
+export REGION=us-west-2
+export KEY_FILE=$(realpath *.pem | head -1) # path to private key file in folder where you ran konvoy -up
+export DISK_SIZE=150 # 161061273600 bytes
+#+end_src
 
-
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/01-install-iscsi.sh
+. bin/set-env.sh
 # IPS=$(aws --region=$REGION ec2 describe-instances |  jq --raw-output ".Reservations[].Instances[] | select((.Tags | length) > 0) | select(.Tags[].Value | test(\"$CLUSTER-worker\")) | select(.State.Name | test(\"running\")) | [.PublicIpAddress] | join(\" \")")
-IPS=$(aws --region=$REGION ec2 describe-instances --filters Name=tag:konvoy/nodeRoles,Values=worker,Name=tag:konvoy/clusterName,Values=${CLUSTER} | jq -r '.Reservations[].Instances[].PublicIpAddress')
+IPS=$(aws --region=$REGION ec2 describe-instances --filters Name=tag:konvoy/nodeRoles,Values=worker Name=tag:konvoy/clusterName,Values=${CLUSTER} | jq -r '.Reservations[].Instances[].PublicIpAddress')
 for ip in $IPS; do
-  echo $ip
-  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo yum install iscsi-initiator-utils -y
-  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo systemctl enable iscsid
-  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo systemctl start iscsid
-  ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip cat /etc/iscsi/initiatorname.iscsi
+	echo $ip
+	ssh -o StrictHostKeyChecking=no -i $KEY_FILE centos@$ip sudo yum install iscsi-initiator-utils -y
+	ssh -i $KEY_FILE centos@$ip sudo systemctl enable iscsid
+	ssh -i $KEY_FILE centos@$ip sudo systemctl start iscsid
 done
+# show that iscsi is running
+for ip in $IPS; do
+	echo $ip
+	ssh -i $KEY_FILE centos@$ip cat /etc/iscsi/initiatorname.iscsi
+done
+
 #+end_src
 
 #+RESULTS:
 
 ** Attach additional disk to worker nodes for OpenEBS
-#+begin_src sh :session konvoy-sh :results none
-export CLUSTER=(cd state ; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
-export REGION=us-west-2
-export DISK_SIZE=150
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/02-create-and-attach-disk.sh
+. bin/set-env.sh
 
-
-aws --region=$REGION ec2 describe-instances |  jq --raw-output ".Reservations[].Instances[] | select((.Tags | length) > 0) | select(.Tags[].Value | test(\"$CLUSTER-worker\")) | select(.State.Name | test(\"running\")) | [.InstanceId, .Placement.AvailabilityZone] | \"\(.[0]) \(.[1])\"" | while read instance zone; do
-  echo $instance $zone
-  volume=$(aws --region=$REGION ec2 create-volume --size=$DISK_SIZE --volume-type gp2 --availability-zone=$zone --tag-specifications="ResourceType=volume,Tags=[{Key=string,Value=$CLUSTER}, {Key=owner,Value=michaelbeisiegel}]" | jq --raw-output .VolumeId)
-  sleep 10
-  aws --region=$REGION ec2 attach-volume --device=/dev/xvdc --instance-id=$instance --volume-id=$volume
-done
+# Get all running instances of worker nodes
+aws --region=$REGION ec2 describe-instances --filters Name=tag:konvoy/nodeRoles,Values=worker Name=tag:konvoy/clusterName,Values=${CLUSTER} | jq -r '.Reservations[].Instances[] | select(.State.Name | test("running")) | [.InstanceId, .Placement.AvailabilityZone] | "\(.[0]) \(.[1])"' | \
+	while read instance zone; do
+		echo $instance $zone
+		# For each running worker instance, create a volume then attach that new volume as /dev/xvdg
+		volume=$(aws --region=$REGION ec2 create-volume --size=$DISK_SIZE --volume-type gp2 --availability-zone=$zone --tag-specifications="ResourceType=volume,Tags=[{Key=string,Value=$CLUSTER}, {Key=owner,Value=michaelbeisiegel}]" | jq --raw-output .VolumeId)
+		sleep 10
+		aws --region=$REGION ec2 attach-volume --device=/dev/xvdg --instance-id=$instance --volume-id=$volume
+	done
 #+end_src
 
 ** Install the storage provider operator
-#+begin_src sh :session konvoy-sh :results none
-curl -O https://openebs.github.io/charts/openebs-operator-1.0.0.yaml
+We will use the manifest for latest version (1.3) in the workshop
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/03-install-openebs-operator.sh
+kubectl apply -f openebs-operator.yaml
 #+end_src
+
 Note: The devices that the worker nodes have attached from the Konvoy install,
 here /dev/nvme0n1,/dev/nvme1n1, maybe different in your case. You can find out
 the device names by ssh’ing into one of the worker nodes and using the =lsblk=
@@ -455,31 +466,30 @@ command.
 We will use a pre-edited operator yaml file that excludes the disk devices used
 in our AWS instances
 #+begin_src sh :session konvoy-sh :results none
-sed 's!exclude: \(.\+/dev/md\)!exclude: \1,/dev/nvme0n1,/dev/nvme1n1,/dev/nvme2n1,/dev/nvme3n1,/dev/nvme4n1,/dev/nvme5n1,/dev/nvme6n1!' ./openebs-operator-1.0.0.yaml > EDITED-openebs-operator-1.0.0.yaml
-kubectl apply -f EDITED-openebs-operator-1.0.0.yaml
+# sed 's!exclude: \(.\+/dev/md\)!exclude: \1,/dev/nvme0n1,/dev/nvme1n1,/dev/nvme2n1,/dev/nvme3n1,/dev/nvme4n1,/dev/nvme5n1,/dev/nvme6n1!' ./openebs-operator-1.0.0.yaml > EDITED-openebs-operator-1.0.0.yaml
+# kubectl apply -f EDITED-openebs-operator-1.0.0.yaml
 #+end_src
 
 ** Create OpenEBS cstor storage pools
-#+begin_src sh :session konvoy-sh :results none
-blkdevices=$(kubectl get blockdevices -n openebs|egrep -v '^NAME'|cut -d' ' -f1)
-#+end_src
+   Pick only the 150GB devices we created above (selected by size)
 
-#+begin_src sh
-cat <<EOF | zkubectl apply -f -
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/04-create-storage-pools.sh
+blkdevices=$(kubectl get blockdevices -n openebs|egrep '^blockdevice' |grep 161061273600 | cut -d' ' -f1)
+cat <<EOF | kubectl apply -f -
 kind: StoragePoolClaim
 apiVersion: openebs.io/v1alpha1
 metadata:
-  name: cstor-disk-pool
+  name: cstor
   annotations:
     cas.openebs.io/config: |
       - name: PoolResourceRequests
         value: |-
-            memory: 2Gi
+          memory: 2Gi
       - name: PoolResourceLimits
         value: |-
-            memory: 4Gi
+          memory: 4Gi
 spec:
-  name: cstor-disk-pool
+  name: cstor
   type: disk
   poolSpec:
     poolType: striped
@@ -494,7 +504,7 @@ In this step, we create a storage class named =openebs-cstor-default=. This
 storage class will use the storage pool created out of blockdevices we have
 specified with an additional annotation that makes it the default storage class
 for the konvoy cluster.
-#+begin_src sh :session konvoy-sh :results none
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/05-create-default-storage-class.sh
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
@@ -504,16 +514,17 @@ metadata:
     openebs.io/cas-type: cstor    
     cas.openebs.io/config: |
       - name: StoragePoolClaim
-        value: "cstor-disk-pool"
+        value: "cstor"
       - name: ReplicaCount
         value: "3"
+    openebs.io/cas-type: cstor
     storageclass.kubernetes.io/is-default-class: 'true'
 provisioner: openebs.io/provisioner-iscsi
 EOF
 #+end_src
 
 ** Verify storage
-#+begin_src sh :session konvoy-sh :results none
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/06-verify-storage.sh
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -522,6 +533,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteOnce
+  storageClassName: openebs-cstor-default
   resources:
     requests:
       storage: 1Gi
@@ -544,6 +556,10 @@ spec:
        - mountPath: "/data"
          name: pv-test
 EOF
+
+echo "Waiting for pod to start running..."
+sleep 20
+kubectl exec pod-pv-test -it --  tail -f /data/output
 #+end_src
 
 * Enable all storage add-ons
