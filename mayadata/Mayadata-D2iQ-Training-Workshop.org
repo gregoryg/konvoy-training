@@ -298,12 +298,13 @@ Change directories into the lab directory:
 cd ~/lab
 #+end_src
 
-Deploy your cluster using the command below:
+Deploy your cluster using the command: `00-konvoy.sh`
 
-#+begin_src sh
-konvoy up --yes
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/00-konvoy.sh
+cp -v cluster-STORAGE-ADDONS-DISABLED.yaml cluster.yaml
+echo "Now bringing up a Konvoy cluster with storage addons disabled using 'konvoy up --yes'"
+konvoy up --yes && konvoy apply kubeconfig --force-overwrite
 #+end_src
-
 The output should be similar to:
 
 #+begin_example
@@ -407,7 +408,7 @@ ip-10-0-193-232.us-west-2.compute.internal   Ready    master   12m   v1.15.2
 ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 #+end_example
 
-* Install OpenEBS and make it the default storage for the cluster
+* 2. Install OpenEBS and make it the default storage for the cluster
 ** Install storage provider (=iscsi=)
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/set-env.sh
 export CLUSTER=$(cd state; jq -r '.modules[].outputs.cluster_name.value' terraform.tfstate)
@@ -475,6 +476,7 @@ in our AWS instances
 
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/04-create-storage-pools.sh
 blkdevices=$(kubectl get blockdevices -n openebs|egrep '^blockdevice' |grep 161061273600 | cut -d' ' -f1)
+
 cat <<EOF | kubectl apply -f -
 kind: StoragePoolClaim
 apiVersion: openebs.io/v1alpha1
@@ -558,14 +560,33 @@ spec:
 EOF
 
 echo "Waiting for pod to start running..."
-sleep 20
+for i in {0..10}
+do
+	podphase=$(kubectl get pod pod-pv-test -o json | jq -r '.status.phase')
+	if [ "$podphase" != "Running" ] ; then
+		echo -n .
+		sleep 5
+	else
+		echo
+		break
+	fi
+done
+
+echo "tailing output from the container using OpenEBS - type ctl-c when done"
+
 kubectl exec pod-pv-test -it --  tail -f /data/output
 #+end_src
 
-* Enable all storage add-ons
+** Re-enable all storage add-ons
 Use cluster.yaml-STORAGE-ENABLED
 konvoy up
-* 2. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/07-re-enable-addons.sh
+cp -v cluster-STORAGE-ADDONS-ENABLED.yaml cluster.yaml
+echo "Now enabling all addons with 'konvoy deploy addons --yes'"
+konvoy deploy addons --yes
+#+end_src
+
+* 3. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
    :PROPERTIES:
    :CUSTOM_ID: expose-a-kubernetes-application-using-a-service-type-load-balancer-l4
    :END:
@@ -678,7 +699,7 @@ You can validate that you can access the Redis pod from your laptop
 using telnet:
 
 #+begin_src sh
-telnet $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
+telnet $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379
 #+end_src
 #+begin_example
   Trying 52.27.218.48...
@@ -696,9 +717,9 @@ instead:
 
 #+begin_src sh
 sudo apt install netcat
-nc -z $(kubectl get svc Redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
+nc -z $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
 #+end_src
-* 3. Expose a Kubernetes Application using an Ingress (L7)
+* 4. Expose a Kubernetes Application using an Ingress (L7)
   :PROPERTIES:
   :CUSTOM_ID: expose-a-kubernetes-application-using-an-ingress-l7
   :END:
@@ -773,7 +794,7 @@ You can also set some Traefik annotations to use some advanced features
 as described in this
 [[https://docs.traefik.io/configuration/backends/kubernetes/][document]].
 
-* 4. Leverage Network Policies to restrict access
+* 5. Leverage Network Policies to restrict access
   :PROPERTIES:
   :CUSTOM_ID: leverage-network-policies-to-restrict-access
   :END:
@@ -811,7 +832,7 @@ as we can simply not expose these apps if we want to restrict access. But, in
 fact, it makes sense to also create network policies to avoid cases where an app
 is exposed by mistake.
 
-** Lab Steps
+** COMMENT Lab Steps
 Create a network policy to deny any ingress
 
 #+begin_src sh :session konvoy-sh
@@ -998,10 +1019,10 @@ AWS and the name resolution in place.
 
 #+begin_src sh :results replace verbatim :exports code
 until nslookup $(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname})
-  do
+do
     sleep 1
-  done
-  echo "Open http://$(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname}):8080 to access the Jenkins UI"
+done
+echo "Open http://$(kubectl get svc jenkins --output jsonpath={.status.loadBalancer.ingress[*].hostname}):8080 to access the Jenkins UI"
 #+end_src
 
 #+begin_example

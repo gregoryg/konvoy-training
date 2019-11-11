@@ -54,7 +54,6 @@ rules:
   verbs: ["get"]
 ---
 # Bind the Service Account with the Role Privileges.
-# TODO: Check if default account also needs to be there
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
