@@ -15,28 +15,6 @@
 #+creator: Emacs 26.2 (Org mode 9.2.3)
 # #+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
 # #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
-* Proposed joint outline
-** Setup Konvoy and OpenEBS Gregory Grubbs, Brian Matheson
-** Set up the environment with Konvoy and install OpenEBS
-** Greg to intro Konvoy
-** Initialize konvoy and talk through cluster.yaml
-** Brian to intro OpenEBS
-** Talk through stateful services and k8s
-** Modify cluster.yaml to disable stateful apps and bring up initial cluster
-** Install OpenEBS on to the cluster
-** Connect to Director
-** Set up default cstor storage pool
-** Modify cluster.yaml to re-enable stateful apps
-** Back to Greg for Konvoy up 
-** Kubectl get pods -o wide -n openebs
-** Kubectl get sc
-** Set up new storage pool for miniostorage pools
-** Create a different storage pool for additional workloads
-** Deploy simple app
-** Minio
-** Test with some file transfers
-** Monitor simple app 
-** Set an alert threshold on bandwidth utilization
 
 * Introduction
   :PROPERTIES:
@@ -54,7 +32,7 @@ main features.
   :END:
 
 ** Workshop syllabus
-   Please open the page at [[https://github.com/mesosphere/konvoy-training]]
+   Please open the page at [[https://github.com/gregoryg/konvoy-training/blob/master/mayadata/Mayadata-D2iQ-Training-Workshop.org]]
 
 
 ** Workstation or Laptop requirements
@@ -62,125 +40,6 @@ You need either a Linux, MacOS or a Windows laptop.
 
   You may choose to use the
   [[https://console.cloud.google.com/cloudshell][Google Cloud Shell]].
-
-** Software on laptop
-*** Docker
-If you use your laptop, you need to have Docker installed.
-
-  + MacOS
-     [[https://download.docker.com/mac/beta/Docker.dmg][Download Docker Desktop for Mac]]
-
-     The whale in your status bar indicates Docker is running and accessible.
-
-     [[file:images/happy-docker-whale-in-status-bar.png]]
-  + Windows
-       Click on the [[https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe][Docker Desktop installer .exe file]]
-
-       Run the installer
-
-       Run Docker
-
-       Whale in the task bar tells you it's running!
-
-       [[file:images/docker_icon_taskbar.jpg]]
-  + Linux
-**** Debian/Ubuntu
-      Package name is =docker.io=
-      #+begin_src sh
-      sudo apt install docker.io
-      #+end_src
-**** RHEL/Centos
-**** After installation
-
-Test that the unprivileged user can use =docker= commands
-#+begin_src sh
-docker ps
-#+end_src
-*** AWS Command Line Interface Installation and Setup
-You will need to install the AWS CLI.
-Either use the Python =pip3= command below or refer to [[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html][Installing the AWS CLI]]
-
-#+begin_src sh
-  pip3 install awscli --upgrade --user
-  sudo cp ~/.local/bin/aws /usr/bin/
-#+end_src
-
-#+begin_example
-  [Temp]
-  aws_access_key_id     = xxx
-  aws_secret_access_key = xxx
-  aws_session_token     = xxx
-#+end_example
-
-Add the following information provided by the instructor to the
-=~/.aws/credentials= file (or create the file if necessary):
-#+begin_src 
-mkdir -p ~/.aws
-
-#+end_src
-
-This token will be valid for one hour.
-
-Run the following command to use this profile:
-
-#+begin_src sh
-  export AWS_PROFILE=Temp
-#+end_src
-
-Test your configuration with the following command at the shell:
-#+begin_src sh
-aws sts get-caller-identity
-#+end_src
-
-The output should be something similar to
-#+begin_example
-{
-    "Account": "110465657741", 
-    "UserId": "WEOIQEUTRIUERLU4374CM:ggrubbs@d2iq.com", 
-    "Arn": "arn:aws:sts::110465657741:assumed-role/Mesosphere-PowerUser/ggrubbs@d2iq.com"
-}
-#+end_example
-
-*IMPORTANT*: If you don't finish the deployment on time, the instructor will provide
-an updated token.
-*** SSH Agent must be working                                      :noexport:
-    #+begin_src sh
-    ssh-add -l
-    #+end_src
-
-    Expected output:
-    #+begin_example
-    The agent has no identities.
-    #+end_example
-
-    If instead, you see
-    #+begin_example
-    Could not open a connection to your authentication agent.
-    #+end_example
-
-    You will need to start the agent.  Easiest way in one single shell session
-    is:
-    #+begin_src sh
-    ssh-agent bash
-    ssh-add -l
-    #+end_src
-
-    *NOTE* Participant may have to manually create their first SSH key
-    #+begin_src sh
-    ssh-keygen
-    #+end_src
-*** =kubectl=                                                      :noexport:
-    For any OS, visit [[https://kubernetes.io/docs/tasks/tools/install-kubectl/][Install and Set Up kubectl]] on kubernetes.io
-
-**** After installation
-     Verify that =kubectl= was successfully installed and in your path
-     #+begin_src sh
-     kubectl version
-     #+end_src
-
-*** Helm                                                           :noexport:
-    To install Helm, visit [[https://github.com/helm/helm/releases/tag/v2.14.3][Helm release page]] and download the =helm= executable for your OS
-*** wget/curl                                                      :noexport:
 
 ** Jump Servers
 
@@ -204,72 +63,15 @@ ssh -i id_rsa_student# centos@jumpserver-ip-address
 For Windows, you can use the [Google Cloud Shell](https://console.cloud.google.com/cloudshell).
 Once your Google Cloud Shell has started, you will have to copy the contents of you id_rsa_student#.pem file to a local file in the cloud shell.  Then change the permission on the file and ssh into the jump host.
 
+Windows users familiar with =putty= may import the =id_rsa_student#.ppk= key in
+the Google Drive
 
-
-#+BEGIN_SRC sh
-
-vi id_rsa_student#
-#+END_SRC
-#+BEGIN_SRC sh
-chmod 400 id_rsa_student#
-#+END_SRC
-
-#+BEGIN_SRC sh
-ssh -i id_rsa_student# centos@jumpserver-ip-address
-#+END_SRC
-
-** Install Konvoy                                                  :noexport:
-Clone the GitHub repository and run the following commands to uncompress
-the Konvoy binaries:
-
-#+begin_src sh
-  tar xvf konvoy_*.tar.bz2
-#+end_src
-
-Go to the Konvoy directory and invoke the =konvoy= command:
-
-#+begin_src sh
-  cd konvoy_*/
-  ./konvoy
-#+end_src
-
-The first time you run the =konvoy= command, a docker image will be downloaded
-to your machine.  That only happens once per version of Konvoy.  
-
-Your expected output will be something like this:
-#+begin_example
-Status: Downloaded newer image for mesosphere/konvoy:v1.1.2
-docker.io/mesosphere/konvoy:v1.1.2
-Usage:
-  konvoy [command]
-
-Available Commands:
-  apply       Updates certain configuration in the existing kubeconfig file
-  check       Run checks on the health of the cluster
-  completion  Output shell completion code for the specified shell (bash or zsh)
-  deploy      Deploy a fully functioning Kubernetes cluster and addons
-  diagnose    Creates a diagnostics bundle of the cluster
-  down        Destroy the Kubernetes cluster
-  get         Get cluster related information
-  help        Help about any command
-  init        Create the provision and deploy configuration with default values
-  provision   Provision the nodes according to the provided Terraform variables file
-  reset       Remove any modifications to the nodes made by the installer, and cleanup file artifacts
-  up          Run provision, and deploy (kubernetes, container-networking, and addons) to create or update a Kubernetes cluster reflecting the provided configuration and inventory files
-  version     Version for konvoy
-
-Flags:
-  -h, --help      help for konvoy
-      --version   version for konvoy
-
-Use "konvoy [command] --help" for more information about a command.
-#+end_example
 
 * 1. Deploy a Konvoy Kubernetes cluster without Storage Options
   :PROPERTIES:
   :CUSTOM_ID: deploy-a-konvoy-cluster
   :END:
-
+  
 ** Objectives
    :PROPERTIES:
    :CUSTOM_ID: objectives
@@ -292,13 +94,15 @@ deployment model that suits the scale that you need as your business grows is
 important.
 
 ** Lab Steps
-Change directories into the lab directory:
+
+  *IMPORTANT*
+First change directory into the lab directory:
 
 #+begin_src sh
 cd ~/lab
 #+end_src
 
-Deploy your cluster using the command: `00-konvoy.sh`
+Deploy your cluster using the command: `bin/00-konvoy.sh`
 
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/00-konvoy.sh
 cp -v cluster-STORAGE-ADDONS-DISABLED.yaml cluster.yaml
@@ -325,19 +129,11 @@ The output should be similar to:
   helm                                                                   [OK]
   dashboard                                                              [OK]
   fluentbit                                                              [OK]
-  awsebscsiprovisioner                                                   [OK]
   traefik                                                                [OK]
   opsportal                                                              [OK]
   kommander                                                              [OK]
-  prometheus                                                             [OK]
-  elasticsearch                                                          [OK]
-  dex                                                                    [OK]
-  elasticsearchexporter                                                  [OK]
-  kibana                                                                 [OK]
   traefik-forward-auth                                                   [OK]
-  prometheusadapter                                                      [OK]
   dex-k8s-authenticator                                                  [OK]
-  velero                                                                 [OK]
 
   STAGE [Removing Disabled Addons]
 
@@ -382,14 +178,6 @@ Click on the =Kubernetes Dashboard= icon to open it.
 #+CAPTION: Kubernetes Dashboard
 [[file:images/kubernetes-dashboard.png]]
 
-To configure kubectl to manage your cluster, you simply need to run the
-following command:
-
-#+begin_example
-  mv ~/.kube/config ~/.kube/config.old
-  konvoy apply kubeconfig -force-overwrite
-#+end_example
-
 You can check that the Kubernetes cluster has been deployed with 3 control nodes
 and 5 worker nodes
 
@@ -410,6 +198,11 @@ ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 
 * 2. Install OpenEBS and make it the default storage for the cluster
 ** Install storage provider (=iscsi=)
+We first install =iscsi= on the worker nodes of our cluster.  This will provide
+the base level persistent storage we will use in OpenEBS
+
+To use the script, run =bin/01-install-iscsi.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/set-env.sh
 export CLUSTER=$(cd state; jq -r '.modules[].outputs.cluster_name.value' terraform.tfstate)
 # CLUSTER=$(cd state; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
@@ -439,6 +232,11 @@ done
 #+RESULTS:
 
 ** Attach additional disk to worker nodes for OpenEBS
+We next create new raw disk volumes on AWS on our worker nodes, and attach those
+raw volumes so they will be available to OpenEBS
+
+Run the script = bin/02-create-and-attach-disk.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/02-create-and-attach-disk.sh
 . bin/set-env.sh
 
@@ -454,11 +252,19 @@ aws --region=$REGION ec2 describe-instances --filters Name=tag:konvoy/nodeRoles,
 #+end_src
 
 ** Install the storage provider operator
+
+From here on, we will use standard Kubernetes commands and UI. 
+
+This step installs OpenEBS on our Konvoy cluster using the =kubectl= command.
+
+Run the script =bin/03-install-openebs-operator.sh=
+
 We will use the manifest for latest version (1.3) in the workshop
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/03-install-openebs-operator.sh
 kubectl apply -f openebs-operator.yaml
 #+end_src
 
+*** Not included in our lab                                        :noexport:
 Note: The devices that the worker nodes have attached from the Konvoy install,
 here /dev/nvme0n1,/dev/nvme1n1, maybe different in your case. You can find out
 the device names by ssh’ing into one of the worker nodes and using the =lsblk=
@@ -472,7 +278,11 @@ in our AWS instances
 #+end_src
 
 ** Create OpenEBS cstor storage pools
+   Now we will create the =StoragePoolClaim= resource
+
    Pick only the 150GB devices we created above (selected by size)
+
+   Run the script =bin/04-create-storage-pools.sh=
 
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/04-create-storage-pools.sh
 blkdevices=$(kubectl get blockdevices -n openebs|egrep '^blockdevice' |grep 161061273600 | cut -d' ' -f1)
@@ -502,10 +312,14 @@ EOF
 #+end_src
 
 ** Create a default storage class
+
 In this step, we create a storage class named =openebs-cstor-default=. This
 storage class will use the storage pool created out of blockdevices we have
 specified with an additional annotation that makes it the default storage class
 for the konvoy cluster.
+
+Run the script =bin/05-create-default-storage-class.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/05-create-default-storage-class.sh
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
@@ -526,6 +340,18 @@ EOF
 #+end_src
 
 ** Verify storage
+   Finally, before we enable the storage-dependent add-ons for Konvoy, let's
+   verify that our OpenEBS installation is working.  
+
+   We define and start a simple Pod that requests a Persistent Volume (PV).
+   This will use our =cstor= default storage provisioner in OpenEBS.  After the
+   pod has initialized and started running, we should see our simple time stamp
+   output.  
+
+   Run =bin/06-verify-storage.sh= and wait for the data output to appear.
+
+   Type =Ctl-C= to interrupt and get back to the shell after viewing the output.
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/06-verify-storage.sh
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -578,8 +404,12 @@ kubectl exec pod-pv-test -it --  tail -f /data/output
 #+end_src
 
 ** Re-enable all storage add-ons
-Use cluster.yaml-STORAGE-ENABLED
-konvoy up
+
+And now we enable all the storage-dependent Konvoy addons.  These components
+will now use our default OpenEBS storage.
+
+Run the script =bin/07-re-enable-addons.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/07-re-enable-addons.sh
 cp -v cluster-STORAGE-ADDONS-ENABLED.yaml cluster.yaml
 echo "Now enabling all addons with 'konvoy deploy addons --yes'"
