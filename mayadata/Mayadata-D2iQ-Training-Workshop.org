@@ -23,7 +23,7 @@
   :END:
 
 During this training, you'll learn how to deploy Konvoy and to use its
-main features.
+main features, with OpenEBS as the persistent storage.
 
 * Prerequisites
   :PROPERTIES:
