@@ -948,8 +948,8 @@ Check the status of the KUDO controller:
 #+end_src
 **** Linux
 #+begin_src sh
-  wget https://github.com/kudobuilder/kudo/releases/download/v0.7.2/kubectl-kudo_0.7.2_linux_x86_64
-  sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/bin/kubectl-kudo
+  wget https://github.com/kudobuilder/kudo/releases/download/v0.8.0/kubectl-kudo_0.8.0_linux_x86_64
+  sudo mv kubectl-kudo_0.8.0_linux_x86_64 /usr/local/bin/kubectl-kudo
   chmod +x /usr/bin/kubectl-kudo
 #+end_src
 
@@ -963,6 +963,8 @@ Check the status of the KUDO controller:
      #+begin_example
      KUDO Version: version.Info{GitVersion:"0.7.2", GitCommit:"f9f6aa85", BuildDate:"2019-08-02T15:05:56Z", GoVersion:"go1.12.5", Compiler:"gc", Platform:"linux/amd64"}
      #+end_example
+
+
 
 *** Deploy ZooKeeper using KUDO
 
@@ -1010,12 +1012,10 @@ And check that the corresponding pods are running:
 #+end_example
 
 *** Deploy Kafka using KUDO
-Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
+Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
 
-Assuming you cloned or unzipped the directory to =/home/myuser/operators=
 #+begin_src sh
-  cd /home/myuser/operators/repository/kafka/operator
-    kubectl kudo install . --instance=kafka --version=0.1.2
+kubectl kudo install kafka --instance=kafka -p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 --version=0.1.3
 #+end_src
 
 Check the status of the deployment.  This will only show status when deploying, otherwise will report a plan status is not found.
