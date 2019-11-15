@@ -14,7 +14,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
 # #+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
-# #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 
 * Introduction
   :PROPERTIES:
@@ -171,12 +171,12 @@ below:
 #+end_src
 
 #+CAPTION: Konvoy UI
-[[file:images/konvoy-ui.png]]
+[[file:../images/konvoy-ui.png]]
 
 Click on the =Kubernetes Dashboard= icon to open it.
 
 #+CAPTION: Kubernetes Dashboard
-[[file:images/kubernetes-dashboard.png]]
+[[file:../images/kubernetes-dashboard.png]]
 
 You can check that the Kubernetes cluster has been deployed with 3 control nodes
 and 5 worker nodes
@@ -978,7 +978,7 @@ EOF
 Go to the Traefik UI to check that new frontends have been created.
 
 #+CAPTION: Traefik front ends
-[[file:images/traefik-frontends.png]]
+[[file:../images/traefik-frontends.png]]
 
 Finally, run the following command to see the URL of the Load Balancer
 created on AWS for the Traefik service:
@@ -1306,13 +1306,13 @@ Konvoy UI.
 Take a look at the different Dashboards available.
 
 #+CAPTION: Grafana UI
-[[file:images/grafana.png]]
+[[file:../images/grafana.png]]
 
 You can also access the Prometheus UI to see all the metrics available
 by clicking on the =Prometheus= icon on the Konvoy UI.
 
 #+CAPTION: Prometheus UI
-[[file:images/prometheus.png]]
+[[file:../images/prometheus.png]]
 
 
 *** Jenkins
@@ -1345,17 +1345,17 @@ Copy the content of this
 as shown in the picture below.
 
 #+CAPTION: Grafana import
-[[file:images/grafana-import.png]]
+[[file:../images/grafana-import.png]]
 
 Click on =Load=.
 
 #+CAPTION: Grafana import data source
-[[file:images/grafana-import-data-source.png]]
+[[file:../images/grafana-import-data-source.png]]
 
 Select =Prometheus= in the =Prometheus= field and click on =Import=.
 
 #+CAPTION: Grafana Kafka
-[[file:images/grafana-kafka.png]]
+[[file:../images/grafana-kafka.png]]
 
 * 10. Konvoy logging/debugging
   :PROPERTIES:
@@ -1373,7 +1373,7 @@ To access the Kibana UI, click on the =Kibana Logs= icon on the Konvoy
 UI.
 
 #+CAPTION: Kibana UI
-[[file:images/kibana.png]]
+[[file:../images/kibana.png]]
 
 By default, it only shows the logs for the latest 15 minutes.
 
@@ -1382,7 +1382,7 @@ Click on the top right corner and select =Last 24 hours=.
 Then, search for =redis=:
 
 #+CAPTION: Kibana Redis
-[[file:images/kibana-Redis.png]]
+[[file:../images/kibana-Redis.png]]
 
 You'll see all the logs related to the Redis pod and Service you
 deployed previously.
@@ -1430,7 +1430,7 @@ EOF
 + 4th, Now check Ingress configure in Traefik
 
 #+caption: Traefik nginx
-file:images/trafik_nginx.png
+file:../images/trafik_nginx.png
 
 The =Traefik dashboard= indicates the nginx application is ready to receive traffic but if you try access nginx with URL listed below, you will notice =404 Not Found= error like:
 
@@ -1441,12 +1441,12 @@ curl -k https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output json
 Don't forget the trailing slash at the end of the URL. Otherwise, you won't generate a 404 error.
 
 #+caption: Traefix nginx
-file:images/trafik_404.png
+file:../images/trafik_404.png
 
 Let's troubleshoot this failure with Konvoy Kibana.
 
 #+caption: Kibana nginx
-file:images/kibana_nginx.png
+file:../images/kibana_nginx.png
 
 With Konvoy Kibana's near real time log collection and indexing, we can easily identify the ingress traffic was eventually handled by a pod =kubernetes.pod_name:nginx-755464dd6c-dnvp9= in nginx service. The log also gave us more information on the failure, ="GET /applications/nginx/ HTTP/1.1" 404=, which tell us that nginx can't find resource at path =/applications/nginx/=.
 
@@ -1482,7 +1482,7 @@ spec:
 EOF
 #+end_src
 #+caption: Dashboard nginx
-file:images/trafik_nginx_200.png
+file:../images/trafik_nginx_200.png
 
 * 11. Upgrade a Konvoy cluster
   :PROPERTIES:
@@ -1730,7 +1730,7 @@ The application can be accessed with URLs follows below pattern.
 - 4th, Now check Ingress configure in Traefik
 
 #+CAPTION: Traefik Nginx
-[[file:images/trafik_Nginx.png]]
+[[file:../images/trafik_Nginx.png]]
 
 The =Traefik dashboard= indicates the Nginx application is ready to
 receive traffic but if you try access Nginx with URL listed below, you
@@ -1742,12 +1742,12 @@ will notice =404 Not Found= error like:
 
 
 #+CAPTION: Traefik Nginx
-[[file:images/trafik_404.png]]
+[[file:../images/trafik_404.png]]
 
 Let's troubleshoot this failure with Konvoy Kibana.
 
 #+CAPTION: Kibana Nginx
-[[file:images/kibana_Nginx.png]]
+[[file:../images/kibana_Nginx.png]]
 
 With Konvoy Kibana's near real time log collection and indexing, we can
 easily identify that the ingress traffic was eventually handled by a pod
@@ -1811,7 +1811,7 @@ To update =Ingress=, we can use the command below.
 #+end_src
 
 #+CAPTION: dashboard Nginx
-[[file:images/trafik_Nginx_200.png]]
+[[file:../images/trafik_Nginx_200.png]]
 
 #  LocalWords:  Jone noexport SETUPFILE num pri tex io src ps awscli sudo cp mv
 # LocalWords:  aws mkdir sts UserId Arn keygen kubernetes chmod xvf kubeconfig zk
@@ -1860,13 +1860,13 @@ application.
 Under Authorized redirect URIs insert =https://<public-cluster-dns-name>/dex/callback=.
 
 #+CAPTION: google-idp-application
-[[file:images/google-idp-application.png]]
+[[file:../images/google-idp-application.png]]
 
 Save the configuration and note down the client ID and the client
 secret.
 
 #+CAPTION: google-idp-credentials
-[[file:images/google-idp-credentials.png]]
+[[file:../images/google-idp-credentials.png]]
 
 Run the following command (after inserting your email address) to
 provide admin rights to your Google account:
@@ -1917,7 +1917,7 @@ When the update is finished, Go to
 Account.
 
 #+CAPTION: google-idp-token
-[[file:images/google-idp-token.png]]
+[[file:../images/google-idp-token.png]]
 
 Follow the instructions in the page, but use the command below in the
 second step to get the right value for the =server= parameter:
