@@ -480,8 +480,6 @@ Check the status of the KUDO controller:
 
 *** Deploy ZooKeeper using KUDO
 
-TODO: grab current output of install for example block
-
 We will need the =operators= directory that you downloaded at the beginning of this lab.
 
 #+begin_src sh
