@@ -461,9 +461,11 @@ for conditional logic and other orchestration requirements.
 ** Lab Steps
 *** Install KUDO on the Konvoy cluster
 
-Run the following command to deploy KUDO on your Kubernetes cluster:
+Run the script =bin/kudo-re-init.sh= to assure KUDO is installed correctly on the cluster
 
-#+begin_src sh
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/kudo-re-init.sh
+kubectl kudo init --dry-run -o yaml | kubectl delete -f -
+sleep 10
 kubectl kudo init
 #+end_src
 
