@@ -530,6 +530,7 @@ Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
 kubectl kudo install kafka --instance=kafka \
 		-p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 \
 		-p BROKER_MEM=1024m \
+		-p STORAGE_CLASS=openebs-hostpath \
 		--version=0.1.3
 #+end_src
 
