@@ -99,7 +99,7 @@ important.
 First change directory into the lab directory:
 
 #+begin_src sh
-cd ~/lab
+cd ~/labs
 #+end_src
 
 Deploy your cluster using the command: `bin/00-konvoy.sh`
