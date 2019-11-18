@@ -235,7 +235,7 @@ done
 We next create new raw disk volumes on AWS on our worker nodes, and attach those
 raw volumes so they will be available to OpenEBS
 
-Run the script = bin/02-create-and-attach-disk.sh=
+Run the script =bin/02-create-and-attach-disk.sh=
 
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/02-create-and-attach-disk.sh
 . bin/set-env.sh
