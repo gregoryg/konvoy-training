@@ -14,29 +14,7 @@
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
 # #+SETUPFILE: ~/projects/org-html-themes/setup/theme-readtheorg.setup
-# #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
-* Proposed joint outline
-** Setup Konvoy and OpenEBS Gregory Grubbs, Brian Matheson
-** Set up the environment with Konvoy and install OpenEBS
-** Greg to intro Konvoy
-** Initialize konvoy and talk through cluster.yaml
-** Brian to intro OpenEBS
-** Talk through stateful services and k8s
-** Modify cluster.yaml to disable stateful apps and bring up initial cluster
-** Install OpenEBS on to the cluster
-** Connect to Director
-** Set up default cstor storage pool
-** Modify cluster.yaml to re-enable stateful apps
-** Back to Greg for Konvoy up 
-** Kubectl get pods -o wide -n openebs
-** Kubectl get sc
-** Set up new storage pool for miniostorage pools
-** Create a different storage pool for additional workloads
-** Deploy simple app
-** Minio
-** Test with some file transfers
-** Monitor simple app 
-** Set an alert threshold on bandwidth utilization
+#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 
 * Introduction
   :PROPERTIES:
@@ -45,7 +23,7 @@
   :END:
 
 During this training, you'll learn how to deploy Konvoy and to use its
-main features.
+main features, with OpenEBS as the persistent storage.
 
 * Prerequisites
   :PROPERTIES:
@@ -54,7 +32,7 @@ main features.
   :END:
 
 ** Workshop syllabus
-   Please open the page at [[https://github.com/mesosphere/konvoy-training]]
+   Please open the page at [[https://github.com/gregoryg/konvoy-training/blob/master/mayadata/Mayadata-D2iQ-Training-Workshop.org]]
 
 
 ** Workstation or Laptop requirements
@@ -62,125 +40,6 @@ You need either a Linux, MacOS or a Windows laptop.
 
   You may choose to use the
   [[https://console.cloud.google.com/cloudshell][Google Cloud Shell]].
-
-** Software on laptop
-*** Docker
-If you use your laptop, you need to have Docker installed.
-
-  + MacOS
-     [[https://download.docker.com/mac/beta/Docker.dmg][Download Docker Desktop for Mac]]
-
-     The whale in your status bar indicates Docker is running and accessible.
-
-     [[file:images/happy-docker-whale-in-status-bar.png]]
-  + Windows
-       Click on the [[https://download.docker.com/win/stable/Docker%20for%20Windows%20Installer.exe][Docker Desktop installer .exe file]]
-
-       Run the installer
-
-       Run Docker
-
-       Whale in the task bar tells you it's running!
-
-       [[file:images/docker_icon_taskbar.jpg]]
-  + Linux
-**** Debian/Ubuntu
-      Package name is =docker.io=
-      #+begin_src sh
-      sudo apt install docker.io
-      #+end_src
-**** RHEL/Centos
-**** After installation
-
-Test that the unprivileged user can use =docker= commands
-#+begin_src sh
-docker ps
-#+end_src
-*** AWS Command Line Interface Installation and Setup
-You will need to install the AWS CLI.
-Either use the Python =pip3= command below or refer to [[https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-install.html][Installing the AWS CLI]]
-
-#+begin_src sh
-  pip3 install awscli --upgrade --user
-  sudo cp ~/.local/bin/aws /usr/bin/
-#+end_src
-
-#+begin_example
-  [Temp]
-  aws_access_key_id     = xxx
-  aws_secret_access_key = xxx
-  aws_session_token     = xxx
-#+end_example
-
-Add the following information provided by the instructor to the
-=~/.aws/credentials= file (or create the file if necessary):
-#+begin_src 
-mkdir -p ~/.aws
-
-#+end_src
-
-This token will be valid for one hour.
-
-Run the following command to use this profile:
-
-#+begin_src sh
-  export AWS_PROFILE=Temp
-#+end_src
-
-Test your configuration with the following command at the shell:
-#+begin_src sh
-aws sts get-caller-identity
-#+end_src
-
-The output should be something similar to
-#+begin_example
-{
-    "Account": "110465657741", 
-    "UserId": "WEOIQEUTRIUERLU4374CM:ggrubbs@d2iq.com", 
-    "Arn": "arn:aws:sts::110465657741:assumed-role/Mesosphere-PowerUser/ggrubbs@d2iq.com"
-}
-#+end_example
-
-*IMPORTANT*: If you don't finish the deployment on time, the instructor will provide
-an updated token.
-*** SSH Agent must be working                                      :noexport:
-    #+begin_src sh
-    ssh-add -l
-    #+end_src
-
-    Expected output:
-    #+begin_example
-    The agent has no identities.
-    #+end_example
-
-    If instead, you see
-    #+begin_example
-    Could not open a connection to your authentication agent.
-    #+end_example
-
-    You will need to start the agent.  Easiest way in one single shell session
-    is:
-    #+begin_src sh
-    ssh-agent bash
-    ssh-add -l
-    #+end_src
-
-    *NOTE* Participant may have to manually create their first SSH key
-    #+begin_src sh
-    ssh-keygen
-    #+end_src
-*** =kubectl=                                                      :noexport:
-    For any OS, visit [[https://kubernetes.io/docs/tasks/tools/install-kubectl/][Install and Set Up kubectl]] on kubernetes.io
-
-**** After installation
-     Verify that =kubectl= was successfully installed and in your path
-     #+begin_src sh
-     kubectl version
-     #+end_src
-
-*** Helm                                                           :noexport:
-    To install Helm, visit [[https://github.com/helm/helm/releases/tag/v2.14.3][Helm release page]] and download the =helm= executable for your OS
-*** wget/curl                                                      :noexport:
 
 ** Jump Servers
 
@@ -204,72 +63,15 @@ ssh -i id_rsa_student# centos@jumpserver-ip-address
 For Windows, you can use the [Google Cloud Shell](https://console.cloud.google.com/cloudshell).
 Once your Google Cloud Shell has started, you will have to copy the contents of you id_rsa_student#.pem file to a local file in the cloud shell.  Then change the permission on the file and ssh into the jump host.
 
+Windows users familiar with =putty= may import the =id_rsa_student#.ppk= key in
+the Google Drive
 
-
-#+BEGIN_SRC sh
-
-vi id_rsa_student#
-#+END_SRC
-#+BEGIN_SRC sh
-chmod 400 id_rsa_student#
-#+END_SRC
-
-#+BEGIN_SRC sh
-ssh -i id_rsa_student# centos@jumpserver-ip-address
-#+END_SRC
-
-** Install Konvoy                                                  :noexport:
-Clone the GitHub repository and run the following commands to uncompress
-the Konvoy binaries:
-
-#+begin_src sh
-  tar xvf konvoy_*.tar.bz2
-#+end_src
-
-Go to the Konvoy directory and invoke the =konvoy= command:
-
-#+begin_src sh
-  cd konvoy_*/
-  ./konvoy
-#+end_src
-
-The first time you run the =konvoy= command, a docker image will be downloaded
-to your machine.  That only happens once per version of Konvoy.  
-
-Your expected output will be something like this:
-#+begin_example
-Status: Downloaded newer image for mesosphere/konvoy:v1.1.2
-docker.io/mesosphere/konvoy:v1.1.2
-Usage:
-  konvoy [command]
-
-Available Commands:
-  apply       Updates certain configuration in the existing kubeconfig file
-  check       Run checks on the health of the cluster
-  completion  Output shell completion code for the specified shell (bash or zsh)
-  deploy      Deploy a fully functioning Kubernetes cluster and addons
-  diagnose    Creates a diagnostics bundle of the cluster
-  down        Destroy the Kubernetes cluster
-  get         Get cluster related information
-  help        Help about any command
-  init        Create the provision and deploy configuration with default values
-  provision   Provision the nodes according to the provided Terraform variables file
-  reset       Remove any modifications to the nodes made by the installer, and cleanup file artifacts
-  up          Run provision, and deploy (kubernetes, container-networking, and addons) to create or update a Kubernetes cluster reflecting the provided configuration and inventory files
-  version     Version for konvoy
-
-Flags:
-  -h, --help      help for konvoy
-      --version   version for konvoy
-
-Use "konvoy [command] --help" for more information about a command.
-#+end_example
 
 * 1. Deploy a Konvoy Kubernetes cluster without Storage Options
   :PROPERTIES:
   :CUSTOM_ID: deploy-a-konvoy-cluster
   :END:
-
+  
 ** Objectives
    :PROPERTIES:
    :CUSTOM_ID: objectives
@@ -292,13 +94,15 @@ deployment model that suits the scale that you need as your business grows is
 important.
 
 ** Lab Steps
-Change directories into the lab directory:
+
+  *IMPORTANT*
+First change directory into the lab directory:
 
 #+begin_src sh
 cd ~/lab
 #+end_src
 
-Deploy your cluster using the command: `00-konvoy.sh`
+Deploy your cluster using the command: `bin/00-konvoy.sh`
 
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/00-konvoy.sh
 cp -v cluster-STORAGE-ADDONS-DISABLED.yaml cluster.yaml
@@ -325,19 +129,11 @@ The output should be similar to:
   helm                                                                   [OK]
   dashboard                                                              [OK]
   fluentbit                                                              [OK]
-  awsebscsiprovisioner                                                   [OK]
   traefik                                                                [OK]
   opsportal                                                              [OK]
   kommander                                                              [OK]
-  prometheus                                                             [OK]
-  elasticsearch                                                          [OK]
-  dex                                                                    [OK]
-  elasticsearchexporter                                                  [OK]
-  kibana                                                                 [OK]
   traefik-forward-auth                                                   [OK]
-  prometheusadapter                                                      [OK]
   dex-k8s-authenticator                                                  [OK]
-  velero                                                                 [OK]
 
   STAGE [Removing Disabled Addons]
 
@@ -375,20 +171,12 @@ below:
 #+end_src
 
 #+CAPTION: Konvoy UI
-[[file:images/konvoy-ui.png]]
+[[file:../images/konvoy-ui.png]]
 
 Click on the =Kubernetes Dashboard= icon to open it.
 
 #+CAPTION: Kubernetes Dashboard
-[[file:images/kubernetes-dashboard.png]]
-
-To configure kubectl to manage your cluster, you simply need to run the
-following command:
-
-#+begin_example
-  mv ~/.kube/config ~/.kube/config.old
-  konvoy apply kubeconfig -force-overwrite
-#+end_example
+[[file:../images/kubernetes-dashboard.png]]
 
 You can check that the Kubernetes cluster has been deployed with 3 control nodes
 and 5 worker nodes
@@ -410,6 +198,11 @@ ip-10-0-194-21.us-west-2.compute.internal    Ready    master   13m   v1.15.2
 
 * 2. Install OpenEBS and make it the default storage for the cluster
 ** Install storage provider (=iscsi=)
+We first install =iscsi= on the worker nodes of our cluster.  This will provide
+the base level persistent storage we will use in OpenEBS
+
+To use the script, run =bin/01-install-iscsi.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/set-env.sh
 export CLUSTER=$(cd state; jq -r '.modules[].outputs.cluster_name.value' terraform.tfstate)
 # CLUSTER=$(cd state; terraform output cluster_name) # name of your cluster, its the prefix used for worker nodes, check in ec2 console
@@ -439,6 +232,11 @@ done
 #+RESULTS:
 
 ** Attach additional disk to worker nodes for OpenEBS
+We next create new raw disk volumes on AWS on our worker nodes, and attach those
+raw volumes so they will be available to OpenEBS
+
+Run the script = bin/02-create-and-attach-disk.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/02-create-and-attach-disk.sh
 . bin/set-env.sh
 
@@ -454,11 +252,29 @@ aws --region=$REGION ec2 describe-instances --filters Name=tag:konvoy/nodeRoles,
 #+end_src
 
 ** Install the storage provider operator
+
+From here on, we will use standard Kubernetes commands and UI. 
+
+This step installs OpenEBS on our Konvoy cluster using the =kubectl= command.
+
+Run the script =bin/03-install-openebs-operator.sh=
+
 We will use the manifest for latest version (1.3) in the workshop
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/03-install-openebs-operator.sh
 kubectl apply -f openebs-operator.yaml
 #+end_src
 
+Wait until the maya API Server pod is ready:
+#+begin_src sh :session konvoy-sh 
+kubectl get pods -n openebs | grep apiserver
+#+end_src
+
+Expected output when ready:
+#+begin_example
+maya-apiserver-6ffbfbb8b5-khslh               1/1     Running   1          3m53s
+#+end_example
+
+*** Not included in our lab                                        :noexport:
 Note: The devices that the worker nodes have attached from the Konvoy install,
 here /dev/nvme0n1,/dev/nvme1n1, maybe different in your case. You can find out
 the device names by ssh’ing into one of the worker nodes and using the =lsblk=
@@ -472,7 +288,11 @@ in our AWS instances
 #+end_src
 
 ** Create OpenEBS cstor storage pools
+   Now we will create the =StoragePoolClaim= resource
+
    Pick only the 150GB devices we created above (selected by size)
+
+   Run the script =bin/04-create-storage-pools.sh=
 
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/04-create-storage-pools.sh
 blkdevices=$(kubectl get blockdevices -n openebs|egrep '^blockdevice' |grep 161061273600 | cut -d' ' -f1)
@@ -502,10 +322,14 @@ EOF
 #+end_src
 
 ** Create a default storage class
+
 In this step, we create a storage class named =openebs-cstor-default=. This
 storage class will use the storage pool created out of blockdevices we have
 specified with an additional annotation that makes it the default storage class
 for the konvoy cluster.
+
+Run the script =bin/05-create-default-storage-class.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/05-create-default-storage-class.sh
 cat <<EOF | kubectl apply -f -
 kind: StorageClass
@@ -526,6 +350,18 @@ EOF
 #+end_src
 
 ** Verify storage
+   Finally, before we enable the storage-dependent add-ons for Konvoy, let's
+   verify that our OpenEBS installation is working.  
+
+   We define and start a simple Pod that requests a Persistent Volume (PV).
+   This will use our =cstor= default storage provisioner in OpenEBS.  After the
+   pod has initialized and started running, we should see our simple time stamp
+   output.  
+
+   Run =bin/06-verify-storage.sh= and wait for the data output to appear.
+
+   Type =Ctl-C= to interrupt and get back to the shell after viewing the output.
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/06-verify-storage.sh
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
@@ -578,15 +414,390 @@ kubectl exec pod-pv-test -it --  tail -f /data/output
 #+end_src
 
 ** Re-enable all storage add-ons
-Use cluster.yaml-STORAGE-ENABLED
-konvoy up
+
+And now we enable all the storage-dependent Konvoy addons.  These components
+will now use our default OpenEBS storage.
+
+Run the script =bin/07-re-enable-addons.sh=
+
 #+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/07-re-enable-addons.sh
 cp -v cluster-STORAGE-ADDONS-ENABLED.yaml cluster.yaml
 echo "Now enabling all addons with 'konvoy deploy addons --yes'"
 konvoy deploy addons --yes
 #+end_src
 
-* 3. Expose a Kubernetes Application using a Service Type Load Balancer (L4)
+* 3. Deploy Apache Kafka using KUDO
+  :PROPERTIES:
+  :CUSTOM_ID: deploy-apache-kafka-using-kudo
+  :END:
+
+** Objectives
+
+- Deploy a stateful application that requires orchestration to deploy
+  (ZooKeeper, then Kafka)
+- Show the usefulness of a purely declarative means of controlling software
+  lifecycle using specification, not Go code
+
+
+** Why is this Important?
+
+The Kubernetes Universal Declarative Operator (KUDO) is a highly productive
+toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your
+applications, give your users the tools they need to operate it and manage its
+lifecyle, and understand how it's behaving in their environments.  
+
+Orchestration is handled purely by declaration in YAML without requiring code
+for conditional logic and other orchestration requirements.
+
+
+** Resources
+   Kudo community web site at kudo.dev
+   
+   Public code hosted at https://github.com/kudobuilder
+
+   Community Slack channel at kubernetes.slack.com #kudo
+
+
+** Lab Steps
+*** Install KUDO on the Konvoy cluster
+
+Run the script =bin/kudo-re-init.sh= to assure KUDO is installed correctly on the cluster
+
+#+begin_src sh :session konvoy-sh :shebang "#!/usr/bin/env bash" :results none :tangle bin/kudo-re-init.sh
+kubectl kudo init --dry-run -o yaml | kubectl delete -f -
+sleep 10
+kubectl kudo init
+#+end_src
+
+Check the status of the KUDO controller:
+
+#+begin_src sh
+  kubectl get pods -n kudo-system
+#+end_src
+
+#+begin_example
+  NAME                        READY   STATUS    RESTARTS   AGE
+  kudo-controller-manager-0   1/1     Running   0          84s
+#+end_example
+
+*** Deploy ZooKeeper using KUDO
+
+We will need the =operators= directory that you downloaded at the beginning of this lab.
+
+#+begin_src sh
+kubectl kudo install zookeeper --instance=zk
+#+end_src
+#+begin_example
+  operator.kudo.k8s.io/v1alpha1/zookeeper created
+  operatorversion.kudo.k8s.io/v1alpha1/zookeeper-0.1.0 created
+  No instance named 'zk' tied to this 'zookeeper' version has been found. Do you want to create one? (Yes/no) yes
+  instance.kudo.k8s.io/v1alpha1/zk created
+#+end_example
+
+Check the status of the deployment:
+
+#+begin_src sh
+  kubectl kudo plan status --instance=zk
+#+end_src
+#+begin_example
+  Plan(s) for "zk" in namespace "default":
+  .
+  └── zk (Operator-Version: "zookeeper-0.1.0" Active-Plan: "zk-deploy-694218097")
+      ├── Plan deploy (serial strategy) [COMPLETE]
+      │   └── Phase zookeeper (parallel strategy) [COMPLETE]
+      │       └── Step everything (COMPLETE)
+      └── Plan validation (serial strategy) [NOT ACTIVE]
+          └── Phase connection (parallel strategy) [NOT ACTIVE]
+              └── Step connection (parallel strategy) [NOT ACTIVE]
+                  └── connection [NOT ACTIVE]
+#+end_example
+
+And check that the corresponding pods are running:
+
+#+begin_src sh
+  kubectl get pods | grep zk
+#+end_src
+#+begin_example
+  zk-zookeeper-0                    1/1     Running   0          81s
+  zk-zookeeper-1                    1/1     Running   0          81s
+  zk-zookeeper-2                    1/1     Running   0          81s
+#+end_example
+
+*** Deploy Kafka using KUDO
+Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.3):
+
+#+begin_src sh
+kubectl kudo install kafka --instance=kafka \
+		-p ZOOKEEPER_URI=zk-zookeeper-0.zk-hs:2181,zk-zookeeper-1.zk-hs:2181,zk-zookeeper-2.zk-hs:2181 \
+		-p BROKER_MEM=1024m \
+		--version=0.1.3
+#+end_src
+
+Check the status of the deployment.  This will only show status when deploying, otherwise will report a plan status is not found.
+
+#+begin_src sh
+  kubectl kudo plan status --instance=kafka
+#+end_src
+
+And check that the corresponding pods are running:
+
+#+begin_src sh
+  kubectl get pods | grep kafka
+#+end_src
+
+
+*** Produce messages in Kafka
+    This Deployment will continuously place messages on a Kafka topic
+
+#+begin_src sh :session konvoy-sh :results none
+cat <<EOF | kubectl create -f -
+  apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+    name: kudo-kafka-generator
+  spec:
+    replicas: 1
+    template:
+      metadata:
+        name: kudo-kafka-generator
+        labels:
+          app: kudo-kafka-generator
+      spec:
+        containers:
+        - name: kudo-kafka-generator
+          image: mesosphere/flink-generator:0.1
+          command: ["/generator-linux"]
+          imagePullPolicy: Always
+          args: ["--broker", "kafka-kafka-0.kafka-svc:9092"]
+EOF
+#+end_src
+
+
+*** Consume messages from Kafka:
+
+#+begin_src sh :session konvoy-sh :results none
+cat <<EOF | kubectl create -f -
+  apiVersion: apps/v1beta1
+  kind: Deployment
+  metadata:
+   name: kudo-kafka-consumer
+  spec:
+   replicas: 1
+   template:
+     metadata:
+       name: kudo-kafka-consumer
+       labels:
+         app: kudo-kafka-consumer
+     spec:
+       containers:
+       - name: kudo-kafka-consumer
+         image: tbaums/kudo-kafka-demo
+         imagePullPolicy: Always
+         env:
+          - name: BROKER_SERVICE
+            value: kafka-kafka-0.kafka-svc:9092
+EOF
+#+end_src
+
+#+RESULTS:
+
+*** Check the logs
+#+begin_src sh
+  kubectl logs $(kubectl get pods -l app=kudo-kafka-consumer -o jsonpath='{.items[0].metadata.name}') --follow
+#+end_src
+
+#+begin_example
+  Message: b'2019-07-11T16:28:45Z;0;6;4283'
+  Message: b'2019-07-11T16:28:46Z;1;8;4076'
+  Message: b'2019-07-11T16:28:47Z;5;2;9140'
+  Message: b'2019-07-11T16:28:48Z;5;8;8603'
+  Message: b'2019-07-11T16:28:49Z;1;0;5097'
+#+end_example
+
+*** Explore KUDO concepts
+KUDO is creating new objects in Kubernetes called Custom Resource Definitions
+(CRDs).  You can get information about these objects like you can get
+information about pods, deployments, services etc.
+
+Run this command to get the list of CRDs created by KUDO:
+
+#+begin_src sh
+  kubectl get crds | grep kudo
+#+end_src
+#+begin_example
+  instances.kudo.dev                               2019-08-21T09:30:46Z
+  operators.kudo.dev                               2019-08-21T09:30:45Z
+  operatorversions.kudo.dev                        2019-08-21T09:30:45Z
+#+end_example
+
+Now list the KUDO instances running using the following command:
+
+#+begin_src sh
+  kubectl get instances.kudo.dev
+#+end_src
+#+begin_example
+  NAME    AGE
+  kafka   18m
+  zk      33m
+#+end_example
+
+And get information about the KUDO Kafka instance:
+
+#+begin_src sh
+  kubectl get instances.kudo.dev kafka -o yaml
+#+end_src
+
+#+begin_example
+  apiVersion: kudo.dev/v1alpha1
+  kind: Instance
+  metadata:
+    creationTimestamp: "2019-08-21T13:05:09Z"
+    generation: 4
+    labels:
+      controller-tools.k8s.io: "1.0"
+      kudo.dev/operator: kafka
+    name: kafka
+    namespace: default
+    resourceVersion: "35698"
+    selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
+    uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
+  spec:
+    operatorVersion:
+      name: kafka-0.1.2
+  status:
+    activePlan:
+      apiVersion: kudo.dev/v1alpha1
+      kind: PlanExecution
+      name: kafka-deploy-975266742
+      namespace: default
+      uid: 33331fe8-e8cc-4eac-b60e-dbfff894ca3d
+    status: COMPLETE
+#+end_example
+
+This is also the approach you take to delete a running instance (=kubectl delete
+instances.kudo.dev kafka=), but you can keep it running.
+
+*** Upgrade Kafka Version and Configuration
+Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka
+operator is 0.2.0) using the following command:
+
+#+begin_src sh
+kubectl kudo upgrade kafka --version=1.0.0 --instance kafka
+#+end_src
+#+begin_example
+  operatorversion.kudo.dev/v1alpha1/kafka-0.2.0 successfully created
+  instance./kafka successfully updated
+#+end_example
+
+Check the status of the upgrade:
+
+#+begin_src sh
+  kubectl kudo plan status --instance=kafka
+#+end_src
+#+begin_example
+  Plan(s) for "kafka" in namespace "default":
+  .
+  └── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-857547438")
+      ├── Plan deploy (serial strategy) [COMPLETE]
+      │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+      │       └── Step deploy (COMPLETE)
+      └── Plan not-allowed (serial strategy) [NOT ACTIVE]
+          └── Phase not-allowed (serial strategy) [NOT ACTIVE]
+              └── Step not-allowed (serial strategy) [NOT ACTIVE]
+                  └── not-allowed [NOT ACTIVE]
+#+end_example
+
+And get information about the upgraded KUDO Kafka instance:
+
+#+begin_src sh
+  kubectl get instances.kudo.dev kafka -o yaml
+#+end_src
+#+begin_example
+  apiVersion: kudo.dev/v1alpha1
+  kind: Instance
+  metadata:
+    creationTimestamp: "2019-08-21T13:05:09Z"
+    generation: 6
+    labels:
+      controller-tools.k8s.io: "1.0"
+      kudo.dev/operator: kafka
+    name: kafka
+    namespace: default
+    resourceVersion: "35828"
+    selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
+    uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
+  spec:
+    operatorVersion:
+      name: kafka-0.2.0
+  status:
+    activePlan:
+      apiVersion: kudo.dev/v1alpha1
+      kind: PlanExecution
+      name: kafka-deploy-857547438
+      namespace: default
+      uid: c2163e4a-b3a0-4889-b8dd-0953c6e4bead
+    status: COMPLETE
+#+end_example
+
+And check that the corresponding Pods have been replaced:
+
+#+begin_src sh
+kubectl get pods | grep kafka
+#+end_src
+#+begin_example
+kafka-kafka-0                          1/1     Running   0          3m33s
+kafka-kafka-1                          1/1     Running   0          88s
+kafka-kafka-2                          1/1     Running   0          12s
+#+end_example
+
+
+
+You can also easily update the configuration of your Kafka cluster.
+
+For example, you can add more brokers using the command below.
+
+#+begin_src sh
+  kubectl patch instance kafka -p '{"spec":{"parameters":{"BROKER_COUNT":"5"}}}' --type=merge
+#+end_src
+#+begin_example
+  instance.kudo.dev/kafka patched
+#+end_example
+
+Check the status of the upgrade:
+
+#+begin_src sh
+  kubectl kudo plan status --instance=kafka
+#+end_src
+
+#+begin_example
+  Plan(s) for "kafka" in namespace "default":
+  .
+  └── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-294386986")
+      ├── Plan deploy (serial strategy) [COMPLETE]
+      │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
+      │       └── Step deploy (COMPLETE)
+      └── Plan not-allowed (serial strategy) [NOT ACTIVE]
+          └── Phase not-allowed (serial strategy) [NOT ACTIVE]
+              └── Step not-allowed (serial strategy) [NOT ACTIVE]
+                  └── not-allowed [NOT ACTIVE]
+#+end_example
+
+And check that the corresponding pods are running:
+
+#+begin_src sh
+  kubectl get pods | grep kafka
+#+end_src
+
+#+begin_example
+  kafka-kafka-0                          1/1     Running   0          34s
+  kafka-kafka-1                          1/1     Running   0          54s
+  kafka-kafka-2                          1/1     Running   0          104s
+  kafka-kafka-3                          1/1     Running   0          2m50s
+  kafka-kafka-4                          1/1     Running   0          2m27s
+  kudo-kafka-consumer-6b4dd5cd59-xs6hn   1/1     Running   0          3h34m
+  kudo-kafka-generator-d655d6dff-mx9fz   1/1     Running   0          3h34m
+#+end_example
+* 3. Expose a Kubernetes Application using a Service Type Load Balancer (L4) :noexport:
    :PROPERTIES:
    :CUSTOM_ID: expose-a-kubernetes-application-using-a-service-type-load-balancer-l4
    :END:
@@ -719,7 +930,7 @@ instead:
 sudo apt install netcat
 nc -z $(kubectl get svc redis --output jsonpath={.status.loadBalancer.ingress[*].hostname}) 6379 < /dev/null ; echo $?
 #+end_src
-* 4. Expose a Kubernetes Application using an Ingress (L7)
+* 4. Expose a Kubernetes Application using an Ingress (L7)         :noexport:
   :PROPERTIES:
   :CUSTOM_ID: expose-a-kubernetes-application-using-an-ingress-l7
   :END:
@@ -769,7 +980,7 @@ EOF
 Go to the Traefik UI to check that new frontends have been created.
 
 #+CAPTION: Traefik front ends
-[[file:images/traefik-frontends.png]]
+[[file:../images/traefik-frontends.png]]
 
 Finally, run the following command to see the URL of the Load Balancer
 created on AWS for the Traefik service:
@@ -1043,432 +1254,6 @@ Go to the corresponding URL to access Jenkins
 
 Login with the user =admin= and the password =password=.
 
-* 7. Deploy Apache Kafka using KUDO
-  :PROPERTIES:
-  :CUSTOM_ID: deploy-apache-kafka-using-kudo
-  :END:
-
-** Objectives
-
-- Deploy a stateful application that requires orchestration to deploy
-  (ZooKeeper, then Kafka)
-- Show the usefulness of a purely declarative means of controlling software
-  lifecycle using specification, not Go code
-
-
-** Why is this Important?
-
-The Kubernetes Universal Declarative Operator (KUDO) is a highly productive
-toolkit for writing operators for Kubernetes. Using KUDO, you can deploy your
-applications, give your users the tools they need to operate it and manage its
-lifecyle, and understand how it's behaving in their environments.  
-
-Orchestration is handled purely by declaration in YAML without requiring code
-for conditional logic and other orchestration requirements.
-
-
-** Resources
-   Kudo community web site at kudo.dev
-   
-   Public code hosted at https://github.com/kudobuilder
-
-   Community Slack channel at kubernetes.slack.com #kudo
-
-
-** Lab Steps
-*** Download or clone the KUDO Operators we will use               :noexport:
-We will need to have the KUDO operators in order to install ZooKeeper and
-Kafka.  
-
-If you use =git=, simply clone the KUDO operators repository
-#+begin_src 
-git clone https://github.com/kudobuilder/operators.git
-#+end_src
-
-Otherwise, download a ZIP file of the directory by visiting
-https://github.com/kudobuilder/operators, then clicking on the "Clone or
-download" button and selecting "Download ZIP"
-
-*** Install KUDO on the Konvoy cluster
-
-Run the following command to deploy KUDO on your Kubernetes cluster:
-
-#+begin_src sh
-kubectl kudo init
-#+end_src
-
-Check the status of the KUDO controller:
-
-#+begin_src sh
-  kubectl get pods -n kudo-system
-#+end_src
-
-#+begin_example
-  NAME                        READY   STATUS    RESTARTS   AGE
-  kudo-controller-manager-0   1/1     Running   0          84s
-#+end_example
-
-*** Install the KUDO CLI                                           :noexport:
-    KUDO requires downloading a =kubectl-kudo= command for the command line interface.  
-**** MacOS
-
-#+begin_src sh
-  brew tap kudobuilder/tap
-  brew install kudo-cli
-#+end_src
-**** Linux
-#+begin_src sh
-  wget https://github.com/kudobuilder/kudo/releases/download/v0.7.2/kubectl-kudo_0.7.2_linux_x86_64
-  sudo mv kubectl-kudo_0.7.2_linux_x86_64 /usr/bin/kubectl-kudo
-  chmod +x /usr/bin/kubectl-kudo
-#+end_src
-
-**** Verify installation
-     #+begin_src sh
-     kubectl-kudo version
-     kubectl kudo version
-     #+end_src
-
-     Expected output from both commands
-     #+begin_example
-     KUDO Version: version.Info{GitVersion:"0.7.2", GitCommit:"f9f6aa85", BuildDate:"2019-08-02T15:05:56Z", GoVersion:"go1.12.5", Compiler:"gc", Platform:"linux/amd64"}
-     #+end_example
-
-*** Deploy ZooKeeper using KUDO
-
-TODO: grab current output of install for example block
-
-We will need the =operators= directory that you downloaded at the beginning of this lab.
-
-#+begin_src sh
-kubectl kudo install zookeeper --instance=zk
-#+end_src
-#+begin_example
-  operator.kudo.k8s.io/v1alpha1/zookeeper created
-  operatorversion.kudo.k8s.io/v1alpha1/zookeeper-0.1.0 created
-  No instance named 'zk' tied to this 'zookeeper' version has been found. Do you want to create one? (Yes/no) yes
-  instance.kudo.k8s.io/v1alpha1/zk created
-#+end_example
-
-Check the status of the deployment:
-
-#+begin_src sh
-  kubectl kudo plan status --instance=zk
-#+end_src
-#+begin_example
-  Plan(s) for "zk" in namespace "default":
-  .
-  └── zk (Operator-Version: "zookeeper-0.1.0" Active-Plan: "zk-deploy-694218097")
-      ├── Plan deploy (serial strategy) [COMPLETE]
-      │   └── Phase zookeeper (parallel strategy) [COMPLETE]
-      │       └── Step everything (COMPLETE)
-      └── Plan validation (serial strategy) [NOT ACTIVE]
-          └── Phase connection (parallel strategy) [NOT ACTIVE]
-              └── Step connection (parallel strategy) [NOT ACTIVE]
-                  └── connection [NOT ACTIVE]
-#+end_example
-
-And check that the corresponding pods are running:
-
-#+begin_src sh
-  kubectl get pods | grep zk
-#+end_src
-#+begin_example
-  zk-zookeeper-0                    1/1     Running   0          81s
-  zk-zookeeper-1                    1/1     Running   0          81s
-  zk-zookeeper-2                    1/1     Running   0          81s
-#+end_example
-
-*** Deploy Kafka using KUDO
-Deploy Kafka 2.2.1 using KUDO (the version of the KUDO Kafka operator is 0.1.2):
-
-Assuming you cloned or unzipped the directory to =/home/myuser/operators=
-#+begin_src sh
-  cd /home/myuser/operators/repository/kafka/operator
-    kubectl kudo install . --instance=kafka --version=0.1.2
-#+end_src
-
-Check the status of the deployment.  This will only show status when deploying, otherwise will report a plan status is not found.
-
-#+begin_src sh
-  kubectl kudo plan status --instance=kafka
-#+end_src
-#+begin_example
-  Plan(s) for "kafka" in namespace "default":
-  .
-  └── kafka (Operator-Version: "kafka-0.1.2" Active-Plan: "kafka-deploy-975266742")
-      ├── Plan deploy (serial strategy) [COMPLETE]
-      │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
-      │       └── Step deploy (COMPLETE)
-      └── Plan not-allowed (serial strategy) [NOT ACTIVE]
-          └── Phase not-allowed (serial strategy) [NOT ACTIVE]
-              └── Step not-allowed (serial strategy) [NOT ACTIVE]
-                  └── not-allowed [NOT ACTIVE]
-#+end_example
-
-And check that the corresponding pods are running:
-
-#+begin_src sh
-  kubectl get pods | grep kafka
-#+end_src
-
-#+begin_example
-  kafka-kafka-0                          1/1     Running   0          39s
-  kafka-kafka-1                          1/1     Running   0          58s
-  kafka-kafka-2                          1/1     Running   0          118s
-#+end_example
-
-*** Produce messages in Kafka
-    This Deployment will continuously place messages on a Kafka topic
-
-#+begin_src sh :session konvoy-sh :results none
-cat <<EOF | kubectl create -f -
-  apiVersion: apps/v1beta1
-  kind: Deployment
-  metadata:
-    name: kudo-kafka-generator
-  spec:
-    replicas: 1
-    template:
-      metadata:
-        name: kudo-kafka-generator
-        labels:
-          app: kudo-kafka-generator
-      spec:
-        containers:
-        - name: kudo-kafka-generator
-          image: mesosphere/flink-generator:0.1
-          command: ["/generator-linux"]
-          imagePullPolicy: Always
-          args: ["--broker", "kafka-kafka-0.kafka-svc:9092"]
-EOF
-#+end_src
-
-
-*** Consume messages from Kafka:
-
-#+begin_src sh :session konvoy-sh :results none
-cat <<EOF | kubectl create -f -
-  apiVersion: apps/v1beta1
-  kind: Deployment
-  metadata:
-   name: kudo-kafka-consumer
-  spec:
-   replicas: 1
-   template:
-     metadata:
-       name: kudo-kafka-consumer
-       labels:
-         app: kudo-kafka-consumer
-     spec:
-       containers:
-       - name: kudo-kafka-consumer
-         image: tbaums/kudo-kafka-demo
-         imagePullPolicy: Always
-         env:
-          - name: BROKER_SERVICE
-            value: kafka-kafka-0.kafka-svc:9092
-EOF
-#+end_src
-
-#+RESULTS:
-
-*** Check the logs
-#+begin_src sh
-  kubectl logs $(kubectl get pods -l app=kudo-kafka-consumer -o jsonpath='{.items[0].metadata.name}') --follow
-#+end_src
-
-#+begin_example
-  Message: b'2019-07-11T16:28:45Z;0;6;4283'
-  Message: b'2019-07-11T16:28:46Z;1;8;4076'
-  Message: b'2019-07-11T16:28:47Z;5;2;9140'
-  Message: b'2019-07-11T16:28:48Z;5;8;8603'
-  Message: b'2019-07-11T16:28:49Z;1;0;5097'
-#+end_example
-
-*** Explore KUDO concepts
-KUDO is creating new objects in Kubernetes called Custom Resource Definitions
-(CRDs).  You can get information about these objects like you can get
-information about pods, deployments, services etc.
-
-Run this command to get the list of CRDs created by KUDO:
-
-#+begin_src sh
-  kubectl get crds | grep kudo
-#+end_src
-#+begin_example
-  instances.kudo.dev                               2019-08-21T09:30:46Z
-  operators.kudo.dev                               2019-08-21T09:30:45Z
-  operatorversions.kudo.dev                        2019-08-21T09:30:45Z
-#+end_example
-
-Now list the KUDO instances running using the following command:
-
-#+begin_src sh
-  kubectl get instances.kudo.dev
-#+end_src
-#+begin_example
-  NAME    AGE
-  kafka   18m
-  zk      33m
-#+end_example
-
-And get information about the KUDO Kafka instance:
-
-#+begin_src sh
-  kubectl get instances.kudo.dev kafka -o yaml
-#+end_src
-
-#+begin_example
-  apiVersion: kudo.dev/v1alpha1
-  kind: Instance
-  metadata:
-    creationTimestamp: "2019-08-21T13:05:09Z"
-    generation: 4
-    labels:
-      controller-tools.k8s.io: "1.0"
-      kudo.dev/operator: kafka
-    name: kafka
-    namespace: default
-    resourceVersion: "35698"
-    selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
-    uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
-  spec:
-    operatorVersion:
-      name: kafka-0.1.2
-  status:
-    activePlan:
-      apiVersion: kudo.dev/v1alpha1
-      kind: PlanExecution
-      name: kafka-deploy-975266742
-      namespace: default
-      uid: 33331fe8-e8cc-4eac-b60e-dbfff894ca3d
-    status: COMPLETE
-#+end_example
-
-This is also the approach you take to delete a running instance (=kubectl delete
-instances.kudo.dev kafka=), but you can keep it running.
-
-*** Upgrade Kafka Version and Configuration
-Upgrade your Kafka cluster to 2.3.0 (the version of the KUDO Kafka
-operator is 0.2.0) using the following command:
-
-#+begin_src sh
-  kubectl kudo upgrade kafka --version=0.2.0 --instance kafka
-#+end_src
-#+begin_example
-  operatorversion.kudo.dev/v1alpha1/kafka-0.2.0 successfully created
-  instance./kafka successfully updated
-#+end_example
-
-Check the status of the upgrade:
-
-#+begin_src sh
-  kubectl kudo plan status --instance=kafka
-#+end_src
-#+begin_example
-  Plan(s) for "kafka" in namespace "default":
-  .
-  └── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-857547438")
-      ├── Plan deploy (serial strategy) [COMPLETE]
-      │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
-      │       └── Step deploy (COMPLETE)
-      └── Plan not-allowed (serial strategy) [NOT ACTIVE]
-          └── Phase not-allowed (serial strategy) [NOT ACTIVE]
-              └── Step not-allowed (serial strategy) [NOT ACTIVE]
-                  └── not-allowed [NOT ACTIVE]
-#+end_example
-
-And get information about the upgraded KUDO Kafka instance:
-
-#+begin_src sh
-  kubectl get instances.kudo.dev kafka -o yaml
-#+end_src
-#+begin_example
-  apiVersion: kudo.dev/v1alpha1
-  kind: Instance
-  metadata:
-    creationTimestamp: "2019-08-21T13:05:09Z"
-    generation: 6
-    labels:
-      controller-tools.k8s.io: "1.0"
-      kudo.dev/operator: kafka
-    name: kafka
-    namespace: default
-    resourceVersion: "35828"
-    selfLink: /apis/kudo.dev/v1alpha1/namespaces/default/instances/kafka
-    uid: 2feaf384-6b4a-4c30-b5ec-4abcb814979b
-  spec:
-    operatorVersion:
-      name: kafka-0.2.0
-  status:
-    activePlan:
-      apiVersion: kudo.dev/v1alpha1
-      kind: PlanExecution
-      name: kafka-deploy-857547438
-      namespace: default
-      uid: c2163e4a-b3a0-4889-b8dd-0953c6e4bead
-    status: COMPLETE
-#+end_example
-
-And check that the corresponding Pods have been replaced:
-
-#+begin_src sh
-kubectl get pods | grep kafka
-#+end_src
-#+begin_example
-kafka-kafka-0                          1/1     Running   0          3m33s
-kafka-kafka-1                          1/1     Running   0          88s
-kafka-kafka-2                          1/1     Running   0          12s
-#+end_example
-
-
-
-You can also easily update the configuration of your Kafka cluster.
-
-For example, you can add more brokers using the command below.
-
-#+begin_src sh
-  kubectl patch instance kafka -p '{"spec":{"parameters":{"BROKER_COUNT":"5"}}}' --type=merge
-#+end_src
-#+begin_example
-  instance.kudo.dev/kafka patched
-#+end_example
-
-Check the status of the upgrade:
-
-#+begin_src sh
-  kubectl kudo plan status --instance=kafka
-#+end_src
-
-#+begin_example
-  Plan(s) for "kafka" in namespace "default":
-  .
-  └── kafka (Operator-Version: "kafka-0.2.0" Active-Plan: "kafka-deploy-294386986")
-      ├── Plan deploy (serial strategy) [COMPLETE]
-      │   └── Phase deploy-kafka (serial strategy) [COMPLETE]
-      │       └── Step deploy (COMPLETE)
-      └── Plan not-allowed (serial strategy) [NOT ACTIVE]
-          └── Phase not-allowed (serial strategy) [NOT ACTIVE]
-              └── Step not-allowed (serial strategy) [NOT ACTIVE]
-                  └── not-allowed [NOT ACTIVE]
-#+end_example
-
-And check that the corresponding pods are running:
-
-#+begin_src sh
-  kubectl get pods | grep kafka
-#+end_src
-
-#+begin_example
-  kafka-kafka-0                          1/1     Running   0          34s
-  kafka-kafka-1                          1/1     Running   0          54s
-  kafka-kafka-2                          1/1     Running   0          104s
-  kafka-kafka-3                          1/1     Running   0          2m50s
-  kafka-kafka-4                          1/1     Running   0          2m27s
-  kudo-kafka-consumer-6b4dd5cd59-xs6hn   1/1     Running   0          3h34m
-  kudo-kafka-generator-d655d6dff-mx9fz   1/1     Running   0          3h34m
-#+end_example
 
 * 8. Scale a Konvoy cluster
   :PROPERTIES:
@@ -1523,13 +1308,13 @@ Konvoy UI.
 Take a look at the different Dashboards available.
 
 #+CAPTION: Grafana UI
-[[file:images/grafana.png]]
+[[file:../images/grafana.png]]
 
 You can also access the Prometheus UI to see all the metrics available
 by clicking on the =Prometheus= icon on the Konvoy UI.
 
 #+CAPTION: Prometheus UI
-[[file:images/prometheus.png]]
+[[file:../images/prometheus.png]]
 
 
 *** Jenkins
@@ -1562,17 +1347,17 @@ Copy the content of this
 as shown in the picture below.
 
 #+CAPTION: Grafana import
-[[file:images/grafana-import.png]]
+[[file:../images/grafana-import.png]]
 
 Click on =Load=.
 
 #+CAPTION: Grafana import data source
-[[file:images/grafana-import-data-source.png]]
+[[file:../images/grafana-import-data-source.png]]
 
 Select =Prometheus= in the =Prometheus= field and click on =Import=.
 
 #+CAPTION: Grafana Kafka
-[[file:images/grafana-kafka.png]]
+[[file:../images/grafana-kafka.png]]
 
 * 10. Konvoy logging/debugging
   :PROPERTIES:
@@ -1590,7 +1375,7 @@ To access the Kibana UI, click on the =Kibana Logs= icon on the Konvoy
 UI.
 
 #+CAPTION: Kibana UI
-[[file:images/kibana.png]]
+[[file:../images/kibana.png]]
 
 By default, it only shows the logs for the latest 15 minutes.
 
@@ -1599,7 +1384,7 @@ Click on the top right corner and select =Last 24 hours=.
 Then, search for =redis=:
 
 #+CAPTION: Kibana Redis
-[[file:images/kibana-Redis.png]]
+[[file:../images/kibana-Redis.png]]
 
 You'll see all the logs related to the Redis pod and Service you
 deployed previously.
@@ -1647,7 +1432,7 @@ EOF
 + 4th, Now check Ingress configure in Traefik
 
 #+caption: Traefik nginx
-file:images/trafik_nginx.png
+file:../images/trafik_nginx.png
 
 The =Traefik dashboard= indicates the nginx application is ready to receive traffic but if you try access nginx with URL listed below, you will notice =404 Not Found= error like:
 
@@ -1658,12 +1443,12 @@ curl -k https://$(kubectl get svc traefik-kubeaddons -n kubeaddons --output json
 Don't forget the trailing slash at the end of the URL. Otherwise, you won't generate a 404 error.
 
 #+caption: Traefix nginx
-file:images/trafik_404.png
+file:../images/trafik_404.png
 
 Let's troubleshoot this failure with Konvoy Kibana.
 
 #+caption: Kibana nginx
-file:images/kibana_nginx.png
+file:../images/kibana_nginx.png
 
 With Konvoy Kibana's near real time log collection and indexing, we can easily identify the ingress traffic was eventually handled by a pod =kubernetes.pod_name:nginx-755464dd6c-dnvp9= in nginx service. The log also gave us more information on the failure, ="GET /applications/nginx/ HTTP/1.1" 404=, which tell us that nginx can't find resource at path =/applications/nginx/=.
 
@@ -1699,7 +1484,7 @@ spec:
 EOF
 #+end_src
 #+caption: Dashboard nginx
-file:images/trafik_nginx_200.png
+file:../images/trafik_nginx_200.png
 
 * 11. Upgrade a Konvoy cluster
   :PROPERTIES:
@@ -1947,7 +1732,7 @@ The application can be accessed with URLs follows below pattern.
 - 4th, Now check Ingress configure in Traefik
 
 #+CAPTION: Traefik Nginx
-[[file:images/trafik_Nginx.png]]
+[[file:../images/trafik_Nginx.png]]
 
 The =Traefik dashboard= indicates the Nginx application is ready to
 receive traffic but if you try access Nginx with URL listed below, you
@@ -1959,12 +1744,12 @@ will notice =404 Not Found= error like:
 
 
 #+CAPTION: Traefik Nginx
-[[file:images/trafik_404.png]]
+[[file:../images/trafik_404.png]]
 
 Let's troubleshoot this failure with Konvoy Kibana.
 
 #+CAPTION: Kibana Nginx
-[[file:images/kibana_Nginx.png]]
+[[file:../images/kibana_Nginx.png]]
 
 With Konvoy Kibana's near real time log collection and indexing, we can
 easily identify that the ingress traffic was eventually handled by a pod
@@ -2028,7 +1813,7 @@ To update =Ingress=, we can use the command below.
 #+end_src
 
 #+CAPTION: dashboard Nginx
-[[file:images/trafik_Nginx_200.png]]
+[[file:../images/trafik_Nginx_200.png]]
 
 #  LocalWords:  Jone noexport SETUPFILE num pri tex io src ps awscli sudo cp mv
 # LocalWords:  aws mkdir sts UserId Arn keygen kubernetes chmod xvf kubeconfig zk
@@ -2077,13 +1862,13 @@ application.
 Under Authorized redirect URIs insert =https://<public-cluster-dns-name>/dex/callback=.
 
 #+CAPTION: google-idp-application
-[[file:images/google-idp-application.png]]
+[[file:../images/google-idp-application.png]]
 
 Save the configuration and note down the client ID and the client
 secret.
 
 #+CAPTION: google-idp-credentials
-[[file:images/google-idp-credentials.png]]
+[[file:../images/google-idp-credentials.png]]
 
 Run the following command (after inserting your email address) to
 provide admin rights to your Google account:
@@ -2134,7 +1919,7 @@ When the update is finished, Go to
 Account.
 
 #+CAPTION: google-idp-token
-[[file:images/google-idp-token.png]]
+[[file:../images/google-idp-token.png]]
 
 Follow the instructions in the page, but use the command below in the
 second step to get the right value for the =server= parameter:
