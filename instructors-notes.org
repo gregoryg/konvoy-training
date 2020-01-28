@@ -1,0 +1,99 @@
+# -*- fill-column: 80; -*-
+#+options: ':nil *:t -:t ::t <:t H:3 \n:nil ^:t arch:headline author:t broken-links:nil
+#+options: c:nil creator:nil d:(not "LOGBOOK") date:t e:t email:nil f:t inline:t num:nil
+#+options: p:nil pri:nil prop:nil stat:t tags:t tasks:t tex:t timestamp:t title:t toc:nil
+#+options: todo:t |:t
+#+title: Konvoy Training Workshop - Instructor's Notes
+#+date: <2019-08-22 Thu>
+#+author: Greg Grubbs
+#+instructors: Greg Grubbs, Valerian Jone
+#+slide_header: github.com/mesosphere/konvoy-training
+#+email: ggrubbs@d2iq.com
+#+language: en
+#+select_tags: export
+#+exclude_tags: noexport
+#+creator: Emacs 26.2 (Org mode 9.2.3)
+# #+SETUPFILE: ../../../style/theme-readtheorg.setup
+#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+
+* Workshop setup - for instructors only!                              :cloud:
+  Location for the nonce: my fork at [[https://github.com/gregoryg/konvoy-training]]
+
+  *NOTE TO SELF* AWS CLI uses PyYAML, which means *I* can use PyYAML!  :-)
+
+** Minimum participant requirements:
+   + Laptop that can connect to site WiFi
+   + Able to bring up a terminal/shell
+   + Ability to edit a file using =vim=, =nano=, =notepad++=, =sublime=, =emacs=
+     or whatever
+   + Ability to install software (at least =pip3=, =aws=, =docker=, =kubectl=
+** Software requirements
+   The *real* requirements that should suffice
+
+   + =pip3=
+   + =curl= and =wget=
+   + =kubectl=
+   + =docker=
+   + AWS CLI
+   + =bunzip2= (used by tar for the Konvoy bundle)
+   + =gunzip= or =git= (for the KUDO operator directory)
+   + text file editor
+
+   Google Cloud Shell is not just a good idea for Windows users, it's a good
+   choice for almost everyone.  *But* each participant would require a GCP
+   account.  Free, but could take time and be unfamiliar. 
+
+   *HIP TIP FOR CLOUD SHELL* Select 'boost' option - this makes the cloud shell usable.
+    I had the shell hang multiple times when on the non-boost sizing.
+    [[https://console.cloud.google.com/home/dashboard?cloudshell=true][Launch Google Cloud Shell]]
+   #+begin_example
+   Boost mode enabled
+   #+end_example
+
+** OBSOLETE: Prepare a method to get AWS credentials to the participants :noexport:
+   Workshop participants will need a credentials file for AWS, updated every
+   hour.  Because there will be access and authentication issues with any form
+   of file sharing, I recommend getting each participant's email and emailing
+   them every hour.  File sharing services are also an option, such as Google
+   Drive or Dropbox.
+
+   To start a new AWS session, use =maws= and the command below to display
+   exactly what the participants will need to save to their own
+   =~/.aws/credentials= file
+   #+begin_src sh :shebang "#!/bin/bash" :results none :tangle bin/refresh-aws.sh 
+     eval $(maws login 110465657741_Mesosphere-PowerUser)
+     cat ~/.aws/credentials | \
+         tr '\n' '\0' | \
+         grep -Eao '\0?\[110465657741_Mesosphere-PowerUser\][^\[]*'| \
+         sed 's,110465657741_Mesosphere-PowerUser,Temp,' | \
+         tr '\0' '\n'
+   #+end_src
+** prepare participants' Jump Servers
+*** TODO Clone the Workshop repo for instructors
+	#+begin_src sh
+	#+end_src
+** Provision Konvoy clusters for instructor (and maybe participants)
+   + add tag indicating specific workshop
+     + purpose: konvoy-training
+     + expiration: 12h
+     + location: San Diego
+     + owner: email or name
+       #+begin_src sh
+         if [ ! -x ./konvoy ] ; then
+             echo "This is not a konvoy working directory (no konvoy command) - exiting"
+             exit 1
+         fi
+         ./konvoy init
+       #+end_src
+** Post-event tear-down
+   If each participant uses =konvoy up= themselves, the instructor will not be able to run
+   =konvoy down= on those clusters.  This means resources will be difficult to clean up.
+   Should the instructor bring up all clusters, showing one cluster as the first part of
+   the workshop?
+
+   
+
+#  LocalWords:  Jone noexport SETUPFILE nano aws src eval PowerUser Eao sed konvoy fi
+#  LocalWords:  init
+
+** stuff
