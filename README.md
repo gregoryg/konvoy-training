@@ -178,43 +178,12 @@ Exposing your application on a kubernetes cluster in an Enterprise-grade environ
 Deploy a redis Pod on your Kubernetes cluster running the following command:
 
 ```bash
-cat <<EOF | kubectl create -f -
-apiVersion: v1
-kind: Pod
-metadata:
-  labels:
-    app: redis
-  name: redis
-spec:
-  containers:
-  - name: redis
-    image: redis:5.0.3
-    ports:
-    - name: redis
-      containerPort: 6379
-      protocol: TCP
-EOF
+kubectl run redis --image=redis:5.0.3 --restart=Never --port=6379 -l app=redis
 ```
 
 Then, expose the service, you need to run the following command to create a Service Type Load Balancer:
-
 ```bash
-cat <<EOF | kubectl create -f -
-apiVersion: v1
-kind: Service
-metadata:
-  labels:
-    app: redis
-  name: redis
-spec:
-  type: LoadBalancer
-  selector:
-    app: redis
-  ports:
-  - protocol: TCP
-    port: 6379
-    targetPort: 6379
-EOF
+kubectl expose pod redis --port=6379 --target-port=6379
 ```
 
 Finally, run the following command to see the URL of the Load Balancer created on AWS for this service:
