@@ -13,7 +13,7 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-#+SETUPFILE: ~/projects/org-html-themes/setup/theme-bigblow.setup
+#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-bigblow.setup
 # #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 * Introduction
   :PROPERTIES:

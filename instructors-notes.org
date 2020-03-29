@@ -13,8 +13,8 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-# #+SETUPFILE: ../../../style/theme-readtheorg.setup
-#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+#+setupfile: ~/projects/emacs/org-html-themes/setup/theme-readtheorg.setup
+# #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
 
 * Workshop setup - for instructors only!                              :cloud:
   Location for the nonce: my fork at [[https://github.com/gregoryg/konvoy-training]]
