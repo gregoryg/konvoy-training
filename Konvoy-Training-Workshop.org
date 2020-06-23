@@ -13,8 +13,8 @@
 #+select_tags: export
 #+exclude_tags: noexport
 #+creator: Emacs 26.2 (Org mode 9.2.3)
-#+SETUPFILE: ~/projects/org-html-themes/setup/theme-bigblow.setup
-# #+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-readtheorg.setup
+# #+SETUPFILE: ~/projects/org-html-themes/setup/theme-bigblow.setup
+#+SETUPFILE: https://raw.githubusercontent.com/fniessen/org-html-themes/master/setup/theme-bigblow.setup
 * Introduction
   :PROPERTIES:
   :CUSTOM_ID: introduction
@@ -86,6 +86,8 @@ If you use your laptop, you need to have Docker installed.
       #+begin_src sh
       sudo apt install docker.io
       #+end_src
+
+
 **** RHEL/Centos
 **** After installation
 
@@ -111,7 +113,7 @@ Either use the Python =pip3= command below or refer to [[https://docs.aws.amazon
 
 Add the following information provided by the instructor to the
 =~/.aws/credentials= file (or create the file if necessary):
-#+begin_src 
+#+begin_src sh
 mkdir -p ~/.aws
 
 #+end_src
@@ -1084,7 +1086,7 @@ We will need to have the KUDO operators in order to install ZooKeeper and
 Kafka.  
 
 If you use =git=, simply clone the KUDO operators repository
-#+begin_src 
+#+begin_src sh
 git clone https://github.com/kudobuilder/operators.git
 #+end_src
 
@@ -1602,7 +1604,7 @@ Click on the top right corner and select =Last 24 hours=.
 Then, search for =redis=:
 
 #+CAPTION: Kibana Redis
-[[file:images/kibana-Redis.png]]
+[[file:images/kibana-redis.png]]
 
 You'll see all the logs related to the Redis pod and Service you
 deployed previously.
@@ -1853,7 +1855,7 @@ Check the version of Kubernetes:
 #+begin_src sh
   kubectl get nodes
 #+end_src
-pp#+begin_example
+#+begin_example
   NAME                                         STATUS   ROLES    AGE   VERSION
   ip-10-0-128-127.us-west-2.compute.internal   Ready    <none>   80m   v1.15.2
   ip-10-0-129-21.us-west-2.compute.internal    Ready    <none>   80m   v1.15.2
@@ -1950,7 +1952,7 @@ The application can be accessed with URLs follows below pattern.
 - 4th, Now check Ingress configure in Traefik
 
 #+CAPTION: Traefik Nginx
-[[file:images/trafik_Nginx.png]]
+[[file:images/trafik_nginx.png]]
 
 The =Traefik dashboard= indicates the Nginx application is ready to
 receive traffic but if you try access Nginx with URL listed below, you
@@ -1967,7 +1969,7 @@ will notice =404 Not Found= error like:
 Let's troubleshoot this failure with Konvoy Kibana.
 
 #+CAPTION: Kibana Nginx
-[[file:images/kibana_Nginx.png]]
+[[file:images/kibana_nginx.png]]
 
 With Konvoy Kibana's near real time log collection and indexing, we can
 easily identify that the ingress traffic was eventually handled by a pod
@@ -2031,7 +2033,7 @@ To update =Ingress=, we can use the command below.
 #+end_src
 
 #+CAPTION: dashboard Nginx
-[[file:images/trafik_Nginx_200.png]]
+[[file:images/trafik_nginx_200.png]]
 
 #  LocalWords:  Jone noexport SETUPFILE num pri tex io src ps awscli sudo cp mv
 # LocalWords:  aws mkdir sts UserId Arn keygen kubernetes chmod xvf kubeconfig zk
